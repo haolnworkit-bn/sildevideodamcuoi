@@ -1,14 +1,23 @@
 # TaoSlideVideo
 
-Tạo video nền chiếu TV/máy chiếu cho **lễ dạm ngõ, ăn hỏi, đính hôn, vu quy, thành hôn**.
-Người dùng nhập tên, ngày (tự đổi âm lịch), lời cảm ơn, ảnh → xem trước trực tiếp → dùng theo 3 cách:
+Tạo video nền cho **lễ dạm ngõ, ăn hỏi, đính hôn, vu quy, thành hôn**: chiếu TV/máy chiếu hoặc đăng mạng xã hội.
 
-- **Trình chiếu** toàn màn hình ngay trên trình duyệt (laptop cắm HDMI vào TV/máy chiếu), giữ màn hình luôn sáng.
-- **Xuất MP4** 1920×1080, độ dài 20 giây / 1 / 3 / 5 phút. Chỉ encode 1 vòng 20 giây rồi ghép lặp nên bản 5 phút xuất mất khoảng 15 giây. Có hướng dẫn chép USB để chiếu trên TV, và nút chia sẻ (Zalo…) trên điện thoại.
-- **Ảnh PNG** 1920×1080 để in phông hoặc gửi tin nhắn.
+## Tính năng
 
-7 mẫu: Hoa Đào Xuân, Trầu Cau, Hỷ Sự Đỏ Vàng, Sen Ngọc, Mẫu Đơn, Thanh Lịch, Hoàng Kim.
-Mẫu nào cũng có bản không ảnh và bản có ảnh (ảnh xuất hiện ở cảnh mở đầu và ở cảnh tên + ngày).
+- **11 mẫu**, lọc được theo màu trang trí rạp (đỏ, hồng, tím, xanh dương, xanh lá, vàng, trắng/kem):
+  Hoa Đào Xuân · Trầu Cau · Hỷ Sự Đỏ Vàng · Sen Ngọc · Mẫu Đơn · Tử Đằng · Cẩm Tú Cầu · Thu Vàng · Ngọc Trai · Thanh Lịch · Hoàng Kim.
+- **Ngang 16:9** (TV, máy chiếu) và **dọc 9:16** (TikTok, Reels, Story). Mẫu nào cũng chạy được cả hai tỉ lệ.
+- **Nội dung**: loại lễ, tiêu đề, lời chào, họ tên (hiện tên gọi hoặc họ tên đầy đủ), ngày dương và âm lịch tự đổi, giờ, địa điểm, lời cảm ơn. Bật/tắt từng cảnh.
+- **Tối đa 6 ảnh**. Ảnh đầu là ảnh chính; từ 2 ảnh trở lên có thêm cảnh **Khoảnh khắc** trình chiếu lần lượt. Mỗi ảnh căn dọc riêng được, ảnh đặt bên trái hoặc phải.
+- **Kiểu chữ**: 11 font tiêu đề, 9 font nội dung (đều hỗ trợ tiếng Việt). Chỉnh được màu tiêu đề, màu chữ, màu nhấn.
+- **Hiệu ứng**: mật độ hạt (tắt / ít / vừa / nhiều), chuyển cảnh (mờ dần / phóng nhẹ / trượt lên).
+- **Nhạc nền**: tải file nhạc lên; nhạc phát khi trình chiếu và được ghép vào MP4 (AAC, có mờ dần ở cuối).
+- **Dùng thực tế**:
+  - Trình chiếu toàn màn hình qua HDMI, giữ màn hình luôn sáng.
+  - Xuất MP4 Full HD dài 1 vòng / 1 / 3 / 5 phút. Chỉ encode 1 vòng rồi ghép lặp nên bản 5 phút xuất mất vài giây.
+  - Tải ảnh PNG; chia sẻ thẳng sang Zalo trên điện thoại; có hướng dẫn chép USB để chiếu trên TV.
+- Dải phân cảnh dưới khung xem trước: thấy thời gian từng cảnh, bấm vào để tua tới.
+- Nội dung, ảnh và nhạc tự lưu trên trình duyệt (localStorage + IndexedDB).
 
 ## Chạy
 
@@ -20,60 +29,68 @@ npm run test:lunar           # kiểm tra đổi lịch âm
 ```
 
 Trang dev (chỉ chạy khi `npm run dev`):
-- `/dev/frames`: xem mọi mẫu ở 6 thời điểm, có/không ảnh, tên dài. Dùng khi thiết kế mẫu mới.
-- `/dev/export?template=<id>`: thử xuất MP4, báo dung lượng & thời gian.
+
+- `/dev/frames?t=<id,id>&aspect=9:16&photos=3&long=1&tf=dancing&hc=2c4a73`: xem mẫu ở mọi cảnh và điểm nối vòng lặp; thử khung dọc, nhiều ảnh, tên dài, font và màu.
+- `/dev/export?template=<id>&aspect=9:16&photos=3&audio=1&loops=15`: thử xuất MP4; báo dung lượng, thời gian, kích thước và có âm thanh hay không.
+
+> Nếu trang `/dev/*` báo 404 sau khi chạy `npm run build`, xoá thư mục `.next` rồi chạy lại `npm run dev`.
 
 ## Kiến trúc
 
-```
+```text
 src/
-  config/features.ts        ← CỜ BẬT/TẮT KIẾM TIỀN (đọc từ env)
+  config/features.ts        ← cờ bật/tắt kiếm tiền (đọc từ env)
   lib/
-    project.ts              ← schema dữ liệu 1 video + dữ liệu dẫn xuất (ngày, âm lịch)
-    events.ts               ← các loại lễ, tiêu đề & lời cảm ơn mẫu
-    lunar.ts                ← đổi dương → âm lịch Việt Nam
+    project.ts              ← schema dữ liệu 1 video + dữ liệu dẫn xuất (ngày, âm lịch, tên)
+    events.ts / lunar.ts    ← loại lễ; đổi dương → âm lịch
+    fonts.ts                ← thư viện font (tải theo nhu cầu)
+    media.ts                ← ảnh & nhạc trong IndexedDB
     render/
-      engine.ts             ← renderFrame(ctx, t, input): dùng chung cho preview/thumbnail/xuất
-      helpers.ts            ← timeline cảnh, hạt lặp tuần hoàn, chữ, ảnh, watermark
-      scenes.ts             ← cảnh "Lời cảm ơn" & "Tên + ngày" dùng chung, tuỳ biến bằng style
-      templates/*.ts        ← mỗi file 1 mẫu; đăng ký trong templates/index.ts
-    export/video.ts         ← WebCodecs H.264 + mp4-muxer → MP4 (fallback WebM)
+      engine.ts             ← renderFrame(ctx, t, input): dùng chung cho preview/thumbnail/trình chiếu/xuất
+      timeline.ts           ← dựng dòng thời gian theo cảnh bật/tắt & số ảnh
+      scenes.ts             ← BỐ CỤC các cảnh (giới thiệu, lời cảm ơn, khoảnh khắc, tên & ngày), tự xếp ngang/dọc
+      theme.ts              ← áp màu/font người dùng chọn lên mẫu
+      helpers.ts            ← hạt lặp tuần hoàn, chuyển cảnh, chữ, ảnh, sprite, watermark
+      templates/*.ts        ← mỗi file 1 mẫu: chỉ khai báo phong cách
+    export/video.ts         ← WebCodecs H.264 + AAC + mp4-muxer → MP4 (fallback WebM)
     billing/entitlements.ts ← quyền: watermark? được xuất sạch? giá?
-  app/api/checkout          ← tạo phiên thanh toán (hiện có mock)
-  components/               ← Editor, PreviewPlayer, Gallery, TemplateThumb
+  components/               ← Editor, EditorPanels, PreviewPlayer, Presenter, Gallery, TemplateThumb
 ```
 
-**Nguyên tắc cốt lõi:** template là *hàm thuần* `render(t)`, nên cùng `t` luôn cho cùng một hình.
-- Preview và file xuất giống hệt nhau (thấy gì nhận nấy).
-- Mọi chuyển động có chu kỳ là ước của 20 giây, nên vòng lặp nối liền không bị giật.
-- Sau này có thể render trên server bằng chính code này (headless Chrome).
+**Nguyên tắc:**
+
+1. Mọi thứ vẽ bằng hàm thuần `renderFrame(t)`, nên preview và file xuất giống hệt nhau. Mọi chuyển động có chu kỳ là ước của độ dài video, nên vòng lặp nối liền.
+2. **Mẫu chỉ khai báo phong cách, không lo bố cục.** Bố cục ngang/dọc nằm chung trong `scenes.ts`. Một mẫu gồm:
+   - `theme`: màu tiêu đề, tên, chữ, màu nhấn.
+   - `background(rc)`, `foreground(rc)`: nền và lớp hạt. Dùng `rc.W`, `rc.H`, `rc.D` để chạy được ở cả 2 tỉ lệ và mọi độ dài.
+   - `photoFrame`: khung ảnh (vòm, tròn, polaroid, viền ngọc trai…).
+   - `intro`: kiểu tiêu đề (`script`/`caps`), cách hiện ảnh ở cảnh mở đầu (`frame`/`emblem`/`fullbleed`/`faded`), biểu tượng `emblem`, nền tiêu đề `titleBacking` (vd dải lụa).
+   - `ornament`, `colors` (nhóm màu rạp).
 
 ### Thêm mẫu mới
-1. Copy `templates/hoa-dao.ts` → đổi `id`, `name`, màu, `background()`, `intro()`.
-2. Khai báo `photoFrame` trong style để cảnh tên + ngày chuyển sang bố cục ảnh bên trái.
-3. Hoạ tiết phức tạp (hoa nhiều lớp…) thì vẽ 1 lần bằng `sprite()` rồi `drawSprite()`, để preview mượt.
-4. Thêm vào mảng `TEMPLATES` trong `templates/index.ts`.
-5. Mở `/dev/frames?t=<id>` (thêm `&long=1` để thử tên dài) để kiểm tra mọi thời điểm, có/không ảnh.
+
+1. Copy một file trong `templates/` gần giống nhất, đổi `id`, `name`, `colors`, `theme`, rồi vẽ `background` / `photoFrame`.
+2. Hoạ tiết phức tạp (hoa nhiều lớp…) thì vẽ 1 lần bằng `sprite()` rồi `drawSprite()` để preview mượt.
+3. Hạt: tạo bằng `makeLoopParticles()`, vẽ qua `particlesFor(rc, arr)` để theo tuỳ chọn mật độ.
+4. Thêm vào `TEMPLATES` trong `templates/index.ts`.
+5. Kiểm tra bằng `/dev/frames?t=<id>` và `/dev/frames?t=<id>&aspect=9:16&photos=3`.
 
 ## Bật/tắt kiếm tiền
 
 | Biến | Ý nghĩa |
-|---|---|
+| --- | --- |
 | `NEXT_PUBLIC_MONETIZATION=off` | Miễn phí hoàn toàn, không watermark |
 | `NEXT_PUBLIC_MONETIZATION=on` | Preview có watermark; xuất bản sạch phải trả tiền theo video |
 | `NEXT_PUBLIC_PRICE_PER_VIDEO` / `NEXT_PUBLIC_PRICE_PREMIUM` | Giá mẫu thường / mẫu premium |
 | `NEXT_PUBLIC_FREE_EXPORT_WATERMARK` | Khi bật kiếm tiền, cho tải bản có watermark miễn phí |
 | `PAYMENT_PROVIDER` | `mock` (giả lập đã trả tiền, để test). Production chưa đặt thì mặc định **chặn** |
 
-Mọi chỗ trong UI chỉ hỏi `computeEntitlement()`. Đổi mô hình giá (gói tháng, credit…) thì chỉ cần sửa file đó.
+> ⚠️ Watermark và trạng thái "đã mua" đang xử lý trên trình duyệt, người rành kỹ thuật có thể vượt qua. Khi thu tiền thật, làm bước 2–3 dưới đây.
 
-> ⚠️ **Giới hạn hiện tại:** watermark và trạng thái "đã mua" đều xử lý trên trình duyệt (localStorage).
-> Người rành kỹ thuật có thể vượt qua. Đủ dùng để thử thị trường, nhưng khi thu tiền thật thì cần làm bước 2 bên dưới.
+## Lộ trình
 
-## Lộ trình thành sản phẩm hoàn chỉnh
-
-1. **Thanh toán thật**: PayOS (chuyển khoản QR, phí thấp, dễ tích hợp) hoặc VNPay/MoMo. Thêm `/api/payment/webhook` để xác nhận đơn.
-2. **Tài khoản + DB** (ví dụ Postgres/Neon + Auth): lưu project, ảnh (object storage) và quyền đã mua theo user thay vì localStorage.
-3. **Chống lách**: bản sạch render trên server (headless Chrome chạy chính `renderFrame`) và chỉ trả file khi đã thanh toán. Trình duyệt chỉ dùng để preview có watermark.
-4. **Link chiếu online**: trang `/v/<id>` phát video toàn màn hình, chiếu thẳng lên Smart TV không cần USB.
-5. Thêm mẫu, nhạc nền (bản cho link online), nhiều ảnh, tuỳ chỉnh font/màu, bố cục 9:16 cho mạng xã hội.
+1. Thanh toán thật (PayOS / VNPay / MoMo) + webhook xác nhận.
+2. Tài khoản + DB (vd Postgres/Neon): lưu project; lưu ảnh và nhạc lên object storage thay cho IndexedDB.
+3. Render bản sạch trên server (headless Chrome chạy chính `renderFrame`), chỉ trả file khi đã thanh toán.
+4. Link chiếu online `/v/<id>` cho Smart TV, không cần USB.
+5. Thư viện nhạc có bản quyền; thêm mẫu theo mùa và theo vùng miền.

@@ -22,6 +22,14 @@ export function hexToRgba(hex: string, a: number): string {
   return `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${a})`;
 }
 
+/** Trộn 2 màu hex, t = 0..1 */
+export function mixColor(a: string, b: string, t: number) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  const k = clamp(t);
+  return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * k)).join(",")})`;
+}
+
 // ---------------- Dòng thời gian ----------------
 
 export interface Scene {

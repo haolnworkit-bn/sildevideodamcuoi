@@ -2,34 +2,42 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FEATURES, formatVnd } from "@/config/features";
 import { computeEntitlement, isUnlocked, startCheckout } from "@/lib/billing/entitlements";
-import { loadDraft, loadDraftPhoto, loadImage, prepareUpload, saveDraft, saveDraftPhoto } from "@/lib/draft";
-import { EVENT_LIST, EVENT_TYPES, isEventType, type EventTypeId } from "@/lib/events";
-import { exportPoster, exportVideo } from "@/lib/export/video";
-import { FONT_SET, ensureFontsLoaded } from "@/lib/fonts";
-import { createDefaultProject, dateInfo, eventTitle, givenName, type ProjectData } from "@/lib/project";
+import { loadDraft, saveDraft, takeLegacyPhoto } from "@/lib/draft";
+import { isEventType } from "@/lib/events";
+import { decodeAudio, exportPoster, exportVideo } from "@/lib/export/video";
+import { FONT_LIB, ensureFontsLoaded } from "@/lib/fonts";
+import { deleteBlob, getBlob, loadImage, musicKey, prepareUpload, putBlob } from "@/lib/media";
+import { MAX_PHOTOS, createDefaultProject, eventTitle, givenName, uid, type Aspect, type ProjectData } from "@/lib/project";
 import { TEMPLATES, getTemplate } from "@/lib/render/templates";
+import { computeTimeline, formatTime } from "@/lib/render/timeline";
+import type { Photo } from "@/lib/render/types";
+import { ContentPanel, FxPanel, MusicPanel, PhotosPanel, StylePanel, TemplatesPanel, switchEvent } from "./EditorPanels";
 import Presenter from "./Presenter";
-import PreviewPlayer from "./PreviewPlayer";
-import TemplateThumb from "./TemplateThumb";
+import PreviewPlayer, { sceneSnapTime } from "./PreviewPlayer";
+
+type Tab = "mau" | "noidung" | "anh" | "kieu" | "hieuung" | "nhac";
+const TABS: Array<{ id: Tab; label: string; icon: string }> = [
+  { id: "mau", label: "Mẫu", icon: "▦" },
+  { id: "noidung", label: "Nội dung", icon: "T" },
+  { id: "anh", label: "Ảnh", icon: "🖼" },
+  { id: "kieu", label: "Kiểu chữ", icon: "Aa" },
+  { id: "hieuung", label: "Hiệu ứng", icon: "✦" },
+  { id: "nhac", label: "Nhạc nền", icon: "♪" },
+];
 
 type ExportState =
   | { kind: "idle" }
   | { kind: "options" }
   | { kind: "paywall" }
   | { kind: "paying" }
-  | { kind: "running"; progress: number }
-  | { kind: "done"; url: string; blob: Blob; ext: string }
+  | { kind: "running"; progress: number; label: string }
+  | { kind: "done"; url: string; blob: Blob; ext: string; note?: string }
   | { kind: "error"; message: string };
 
-const LENGTHS = [
-  { loops: 1, label: "20 giây", hint: "Nhẹ nhất, bật chế độ lặp lại trên TV" },
-  { loops: 3, label: "1 phút", hint: "" },
-  { loops: 9, label: "3 phút", hint: "" },
-  { loops: 15, label: "5 phút", hint: "Cho TV không có chế độ lặp lại" },
-];
+type LoadedPhoto = { img: HTMLImageElement; url: string };
 
 function slug(s: string) {
   return s
@@ -52,38 +60,57 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-/** Đổi loại lễ; nếu đang dùng lời cảm ơn mẫu thì đổi luôn sang lời mẫu của loại mới */
-function switchEvent(d: ProjectData, ev: EventTypeId): ProjectData {
-  if (d.eventType === ev) return d;
-  const usingDefault = d.message.trim() === EVENT_TYPES[d.eventType].defaultMessage;
-  return { ...d, eventType: ev, message: usingDefault ? EVENT_TYPES[ev].defaultMessage : d.message };
-}
-
 export default function Editor() {
   const params = useSearchParams();
   const [data, setData] = useState<ProjectData | null>(null);
-  const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
+  const [imgs, setImgs] = useState<Record<string, LoadedPhoto>>({});
+  const [music, setMusic] = useState<{ blob: Blob; url: string } | null>(null);
+  const [tab, setTab] = useState<Tab>("noidung");
+  const [busy, setBusy] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [exp, setExp] = useState<ExportState>({ kind: "idle" });
-  const [loops, setLoops] = useState(1);
+  const [target, setTarget] = useState(20);
   const [presenting, setPresenting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Khởi tạo từ bản nháp + query (?template=...&event=...)
+  // ---------- khởi tạo: bản nháp + query + ảnh/nhạc trong IndexedDB ----------
   useEffect(() => {
-    const tplParam = params.get("template");
-    const evParam = params.get("event");
-    let d = loadDraft();
-    if (!d) {
-      d = createDefaultProject(getTemplate(tplParam).id, isEventType(evParam) ? evParam : "dam-ngo");
-    } else {
-      if (tplParam && TEMPLATES.some((t) => t.id === tplParam)) d = { ...d, templateId: tplParam };
-      if (isEventType(evParam)) d = switchEvent(d, evParam);
-    }
-    setData(d);
-    setUnlocked(isUnlocked(d.id));
-    const p = loadDraftPhoto();
-    if (p) loadImage(p).then(setPhoto).catch(() => saveDraftPhoto(null));
+    (async () => {
+      const tplParam = params.get("template");
+      const evParam = params.get("event");
+      let d = loadDraft();
+      if (!d) {
+        d = createDefaultProject(getTemplate(tplParam).id, isEventType(evParam) ? evParam : "dam-ngo");
+      } else {
+        if (tplParam && TEMPLATES.some((t) => t.id === tplParam)) d = { ...d, templateId: tplParam };
+        if (isEventType(evParam)) d = switchEvent(d, evParam);
+      }
+      // chuyển ảnh của phiên bản cũ (localStorage) sang IndexedDB
+      const legacy = takeLegacyPhoto();
+      if (legacy && d.photos.length === 0) {
+        try {
+          const id = uid();
+          await putBlob(id, await (await fetch(legacy)).blob());
+          const fy = (d as ProjectData & { photoFocusY?: number }).photoFocusY ?? 0.4;
+          d = { ...d, photos: [{ id, focusY: fy }] };
+        } catch {
+          /* bỏ qua */
+        }
+      }
+      const loaded: Record<string, LoadedPhoto> = {};
+      for (const m of d.photos) {
+        const b = await getBlob(m.id);
+        if (!b) continue;
+        const url = URL.createObjectURL(b);
+        loaded[m.id] = { url, img: await loadImage(url) };
+      }
+      d = { ...d, photos: d.photos.filter((m) => loaded[m.id]) };
+      const mb = await getBlob(musicKey(d.id));
+      setImgs(loaded);
+      if (mb) setMusic({ blob: mb, url: URL.createObjectURL(mb) });
+      setData(d);
+      setUnlocked(isUnlocked(d.id));
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -91,46 +118,124 @@ export default function Editor() {
     if (data) saveDraft(data);
   }, [data]);
 
+  const patch = useCallback((p: Partial<ProjectData>) => setData((d) => (d ? { ...d, ...p } : d)), []);
+
+  const photos = useMemo<Array<Photo & { id: string; url: string }>>(
+    () =>
+      (data?.photos ?? [])
+        .filter((m) => imgs[m.id])
+        .map((m) => ({ id: m.id, url: imgs[m.id].url, img: imgs[m.id].img, focusY: m.focusY })),
+    [data?.photos, imgs],
+  );
+  const timeline = useMemo(
+    () => (data ? computeTimeline(data, photos.length) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data?.scenes, photos.length],
+  );
   const template = getTemplate(data?.templateId);
   const ent = useMemo(() => computeEntitlement(template, unlocked), [template, unlocked]);
 
-  if (!data) return <div className="editor-loading">Đang tải trình chỉnh sửa…</div>;
+  if (!data || !timeline) return <div className="editor-loading">Đang tải trình chỉnh sửa…</div>;
 
-  const set = <K extends keyof ProjectData>(k: K, v: ProjectData[K]) =>
-    setData((d) => (d ? { ...d, [k]: v } : d));
+  const D = timeline.duration;
+  const portrait = data.aspect === "9:16";
+  const fileName = `${slug(eventTitle(data))}-${slug(givenName(data.groomName))}-${slug(givenName(data.brideName))}${portrait ? "-doc" : ""}`;
+  const frameInput = (watermark: string | null) => ({ template, data, photos, fonts: FONT_LIB, watermark });
 
-  const onPhoto = async (file: File | undefined) => {
-    if (!file) return;
-    const url = await prepareUpload(file);
-    saveDraftPhoto(url);
-    setPhoto(await loadImage(url));
+  // ---------- ảnh ----------
+  const addPhotos = async (files: File[]) => {
+    if (!files.length) return;
+    setBusy(true);
+    try {
+      const metas = [...data.photos];
+      const next = { ...imgs };
+      for (const f of files.slice(0, MAX_PHOTOS - metas.length)) {
+        const blob = await prepareUpload(f);
+        const id = uid();
+        await putBlob(id, blob);
+        const url = URL.createObjectURL(blob);
+        next[id] = { url, img: await loadImage(url) };
+        metas.push({ id, focusY: 0.4 });
+      }
+      setImgs(next);
+      patch({ photos: metas });
+    } finally {
+      setBusy(false);
+    }
   };
+  const removePhoto = (id: string) => {
+    deleteBlob(id);
+    if (imgs[id]) URL.revokeObjectURL(imgs[id].url);
+    setImgs(({ [id]: _, ...rest }) => rest);
+    patch({ photos: data.photos.filter((m) => m.id !== id) });
+  };
+  const makeMain = (id: string) => {
+    const m = data.photos.find((p) => p.id === id);
+    if (m) patch({ photos: [m, ...data.photos.filter((p) => p.id !== id)] });
+  };
+
+  // ---------- nhạc ----------
+  const uploadMusic = async (f: File) => {
+    await putBlob(musicKey(data.id), f);
+    if (music) URL.revokeObjectURL(music.url);
+    setMusic({ blob: f, url: URL.createObjectURL(f) });
+    patch({ music: { ...data.music, enabled: true, name: f.name } });
+  };
+  const removeMusic = () => {
+    deleteBlob(musicKey(data.id));
+    if (music) URL.revokeObjectURL(music.url);
+    setMusic(null);
+    patch({ music: { ...data.music, enabled: false, name: "" } });
+  };
+  const musicOn = !!music && data.music.enabled;
 
   const newProject = () => {
-    if (!confirm("Tạo video mới? Nội dung hiện tại sẽ bị thay thế.")) return;
-    setData(createDefaultProject(data.templateId, data.eventType));
+    if (!confirm("Tạo video mới? Nội dung, ảnh và nhạc hiện tại sẽ bị xoá.")) return;
+    data.photos.forEach((m) => deleteBlob(m.id));
+    deleteBlob(musicKey(data.id));
+    Object.values(imgs).forEach((p) => URL.revokeObjectURL(p.url));
+    setImgs({});
+    setMusic(null);
+    setData({ ...createDefaultProject(data.templateId, data.eventType), aspect: data.aspect });
     setUnlocked(false);
-    setPhoto(null);
-    saveDraftPhoto(null);
   };
 
-  const fileName = `${slug(eventTitle(data))}-${slug(givenName(data.groomName))}-${slug(givenName(data.brideName))}`;
-  const frameInput = (watermark: string | null) => ({ template, data, photo, fonts: FONT_SET, watermark });
+  // ---------- xuất ----------
+  const lengths = [20, 60, 180, 300].map((sec) => {
+    const loops = Math.max(1, Math.round(sec / D));
+    return { sec, loops, label: formatTime(loops * D), mb: Math.max(1, Math.round(loops * D * 0.9)) };
+  });
+  const chosen = lengths.find((l) => l.sec === target) ?? lengths[0];
 
   const runExport = async (watermark: string | null) => {
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
-    setExp({ kind: "running", progress: 0 });
+    setExp({ kind: "running", progress: 0, label: "Đang chuẩn bị…" });
     try {
-      await ensureFontsLoaded();
-      const { blob, ext } = await exportVideo({
+      await ensureFontsLoaded([data.style.titleFont, data.style.bodyFont]);
+      let audio: AudioBuffer | null = null;
+      if (musicOn && music) {
+        try {
+          audio = await decodeAudio(music.blob);
+        } catch {
+          audio = null;
+        }
+      }
+      const { blob, ext, audioDropped } = await exportVideo({
         ...frameInput(watermark),
-        loops,
+        loops: chosen.loops,
+        audio,
+        volume: data.music.volume,
         signal: ac.signal,
-        onProgress: (p) => setExp({ kind: "running", progress: p }),
+        onProgress: (p) => setExp({ kind: "running", progress: p, label: p < 0.86 || !audio ? "Đang dựng hình…" : "Đang ghép nhạc…" }),
       });
-      setExp({ kind: "done", url: URL.createObjectURL(blob), blob, ext });
+      const note = audioDropped
+        ? "Trình duyệt này chưa mã hoá được âm thanh AAC nên video không có nhạc. Hãy dùng Chrome/Edge trên Windows hoặc macOS, hoặc phát nhạc riêng khi trình chiếu."
+        : musicOn && !audio
+          ? "Không đọc được file nhạc nên video không có tiếng."
+          : undefined;
+      setExp({ kind: "done", url: URL.createObjectURL(blob), blob, ext, note });
     } catch (e) {
       if ((e as DOMException)?.name === "AbortError") setExp({ kind: "idle" });
       else setExp({ kind: "error", message: (e as Error)?.message || "Xuất video thất bại" });
@@ -138,15 +243,13 @@ export default function Editor() {
   };
 
   const savePoster = async () => {
-    await ensureFontsLoaded();
-    const blob = await exportPoster(frameInput(ent.cleanExport ? null : ent.previewWatermark), template.posterTime ?? 17);
+    await ensureFontsLoaded([data.style.titleFont, data.style.bodyFont]);
+    const names = timeline.scenes.find((s) => s.type === "names")!;
+    const blob = await exportPoster(frameInput(ent.cleanExport ? null : ent.previewWatermark), sceneSnapTime(names) + 1.5);
     download(blob, `${fileName}.png`);
   };
 
-  const startExport = () => {
-    if (ent.cleanExport) runExport(null);
-    else setExp({ kind: "paywall" });
-  };
+  const startExport = () => (ent.cleanExport ? runExport(null) : setExp({ kind: "paywall" }));
 
   const pay = async () => {
     setExp({ kind: "paying" });
@@ -161,14 +264,6 @@ export default function Editor() {
     }
   };
 
-  const share = async (blob: Blob, ext: string) => {
-    const file = new File([blob], `${fileName}.${ext}`, { type: blob.type });
-    try {
-      await navigator.share({ files: [file], title: eventTitle(data) });
-    } catch {
-      /* người dùng huỷ */
-    }
-  };
   const canShareFiles = (blob: Blob) => {
     try {
       return typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [new File([blob], "v.mp4", { type: blob.type })] });
@@ -176,8 +271,15 @@ export default function Editor() {
       return false;
     }
   };
+  const share = async (blob: Blob, ext: string) => {
+    try {
+      await navigator.share({ files: [new File([blob], `${fileName}.${ext}`, { type: blob.type })], title: eventTitle(data) });
+    } catch {
+      /* người dùng huỷ */
+    }
+  };
 
-  const info = dateInfo(data);
+  const setAspect = (a: Aspect) => patch({ aspect: a });
 
   return (
     <div className="editor">
@@ -186,14 +288,21 @@ export default function Editor() {
           {FEATURES.brandName}
         </Link>
         <span className="topbar-title">
-          {eventTitle(data)} · {template.name}
+          {eventTitle(data)} · {template.name} · {formatTime(D)}
         </span>
+        <div className="segmented small" role="radiogroup" aria-label="Tỉ lệ khung hình">
+          {(["16:9", "9:16"] as const).map((a) => (
+            <button key={a} className={data.aspect === a ? "on" : ""} onClick={() => setAspect(a)} title={a === "16:9" ? "Chiếu TV, máy chiếu" : "TikTok, Reels, Story"}>
+              {a === "16:9" ? "▭ 16:9" : "▯ 9:16"}
+            </button>
+          ))}
+        </div>
         <div className="topbar-actions">
           <button className="btn ghost hide-sm" onClick={newProject}>
             Video mới
           </button>
           <button className="btn ghost" onClick={() => setPresenting(true)} title="Chiếu toàn màn hình qua HDMI">
-            ⛶ Trình chiếu
+            ⛶ <span className="hide-xs">Trình chiếu</span>
           </button>
           <button className="btn primary" onClick={() => setExp({ kind: "options" })}>
             Xuất video
@@ -202,181 +311,30 @@ export default function Editor() {
       </header>
 
       <div className="editor-body">
-        <aside className="panel">
-          <section className="field-group">
-            <h3>Loại lễ</h3>
-            <div className="chips">
-              {EVENT_LIST.map((e) => (
-                <button
-                  key={e.id}
-                  className={`chip ${data.eventType === e.id ? "on" : ""}`}
-                  onClick={() => setData(switchEvent(data, e.id))}
-                >
-                  {e.label}
-                </button>
-              ))}
-            </div>
-            <label className="field">
-              <span>Tiêu đề hiển thị</span>
-              <input
-                value={data.title}
-                placeholder={EVENT_TYPES[data.eventType].title}
-                onChange={(e) => set("title", e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span>Lời chào mở đầu</span>
-              <input
-                value={data.greeting}
-                placeholder="Để trống nếu không muốn hiện"
-                onChange={(e) => set("greeting", e.target.value)}
-              />
-            </label>
-          </section>
-
-          <section className="field-group">
-            <h3>Mẫu video ({TEMPLATES.length})</h3>
-            <div className="tpl-grid">
-              {TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  className={`tpl-pick ${t.id === data.templateId ? "on" : ""}`}
-                  onClick={() => set("templateId", t.id)}
-                  title={t.description}
-                >
-                  <TemplateThumb template={t} eventType={data.eventType} data={data} at={2.5} />
-                  <span>
-                    {t.name}
-                    {FEATURES.monetization && t.tier === "premium" && <em className="badge">Premium</em>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="field-group">
-            <h3>Cô dâu & chú rể</h3>
-            <label className="field">
-              <span>Họ tên chú rể</span>
-              <input value={data.groomName} onChange={(e) => set("groomName", e.target.value)} />
-            </label>
-            <label className="field">
-              <span>Họ tên cô dâu</span>
-              <input value={data.brideName} onChange={(e) => set("brideName", e.target.value)} />
-            </label>
-            <div className="row even">
-              <label className="field">
-                <span>Tên ở cảnh lớn</span>
-                <select
-                  value={data.nameStyle}
-                  onChange={(e) => set("nameStyle", e.target.value as ProjectData["nameStyle"])}
-                >
-                  <option value="short">
-                    Tên gọi ({givenName(data.groomName)} & {givenName(data.brideName)})
-                  </option>
-                  <option value="full">Họ tên đầy đủ</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>Thứ tự</span>
-                <select
-                  value={data.nameOrder}
-                  onChange={(e) => set("nameOrder", e.target.value as ProjectData["nameOrder"])}
-                >
-                  <option value="groom-first">Chú rể trước</option>
-                  <option value="bride-first">Cô dâu trước</option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section className="field-group">
-            <h3>Thời gian & địa điểm</h3>
-            <div className="row">
-              <label className="field">
-                <span>Ngày (dương lịch)</span>
-                <input type="date" value={data.date} onChange={(e) => set("date", e.target.value)} />
-              </label>
-              <label className="field">
-                <span>Giờ</span>
-                <input type="time" value={data.time} onChange={(e) => set("time", e.target.value)} />
-              </label>
-            </div>
-            <label className="check">
-              <input type="checkbox" checked={data.showLunar} onChange={(e) => set("showLunar", e.target.checked)} />
-              <span>
-                Hiện ngày âm lịch
-                {info.valid && (
-                  <small>
-                    {" "}
-                    ({info.weekday}, {info.lunar || "ẩn"})
-                  </small>
-                )}
-              </span>
-            </label>
-            <label className="field">
-              <span>Địa điểm</span>
-              <input
-                value={data.venue}
-                placeholder="VD: Tư gia nhà gái"
-                onChange={(e) => set("venue", e.target.value)}
-              />
-            </label>
-          </section>
-
-          <section className="field-group">
-            <h3>Lời cảm ơn</h3>
-            <label className="field">
-              <textarea
-                rows={4}
-                value={data.message}
-                maxLength={320}
-                onChange={(e) => set("message", e.target.value)}
-              />
-              <small className="hint">{data.message.length}/320 ký tự</small>
-            </label>
-            <button className="link" onClick={() => set("message", EVENT_TYPES[data.eventType].defaultMessage)}>
-              Dùng lời mẫu
+        <nav className="rail" aria-label="Công cụ">
+          {TABS.map((t) => (
+            <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
+              <i>{t.icon}</i>
+              <span>{t.label}</span>
             </button>
-          </section>
-
-          <section className="field-group">
-            <h3>Ảnh cặp đôi</h3>
-            <label className="upload">
-              <input type="file" accept="image/*" onChange={(e) => onPhoto(e.target.files?.[0])} />
-              {photo ? "Đổi ảnh khác" : "Chọn ảnh (không bắt buộc)"}
-            </label>
-            {photo && (
-              <>
-                <label className="field">
-                  <span>Căn ảnh theo chiều dọc (giữ khuôn mặt trong khung)</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={data.photoFocusY}
-                    onChange={(e) => set("photoFocusY", Number(e.target.value))}
-                  />
-                </label>
-                <button
-                  className="link"
-                  onClick={() => {
-                    setPhoto(null);
-                    saveDraftPhoto(null);
-                  }}
-                >
-                  Bỏ ảnh
-                </button>
-              </>
-            )}
-          </section>
+          ))}
+        </nav>
+        <aside className="panel">
+          {tab === "mau" && <TemplatesPanel data={data} patch={patch} photos={photos} />}
+          {tab === "noidung" && <ContentPanel data={data} patch={patch} setData={setData} photoCount={photos.length} />}
+          {tab === "anh" && (
+            <PhotosPanel data={data} patch={patch} photos={photos} onAdd={addPhotos} onRemove={removePhoto} onMakeMain={makeMain} busy={busy} />
+          )}
+          {tab === "kieu" && <StylePanel data={data} patch={patch} />}
+          {tab === "hieuung" && <FxPanel data={data} patch={patch} />}
+          {tab === "nhac" && <MusicPanel data={data} patch={patch} musicUrl={music?.url ?? null} onUpload={uploadMusic} onRemove={removeMusic} />}
         </aside>
 
         <main className="preview-area">
-          <PreviewPlayer template={template} data={data} photo={photo} watermark={ent.previewWatermark} />
+          <PreviewPlayer template={template} data={data} photos={photos} watermark={ent.previewWatermark} timeline={timeline} />
           <p className="spec">
-            Full HD 1920×1080 · vòng lặp {template.duration} giây liền mạch · tự động lưu nháp
+            {portrait ? "Dọc 1080×1920 · TikTok, Reels, Story" : "Ngang 1920×1080 · chiếu TV, máy chiếu"} · {timeline.scenes.length} cảnh ·{" "}
+            {formatTime(D)} lặp liền mạch · {musicOn ? `♪ ${data.music.name}` : "chưa có nhạc nền"}
             {ent.previewWatermark && (
               <>
                 {" "}
@@ -391,8 +349,10 @@ export default function Editor() {
         <Presenter
           template={template}
           data={data}
-          photo={photo}
+          photos={photos}
           watermark={ent.previewWatermark}
+          musicUrl={musicOn ? music!.url : null}
+          volume={data.music.volume}
           onClose={() => setPresenting(false)}
         />
       )}
@@ -402,41 +362,43 @@ export default function Editor() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             {exp.kind === "options" && (
               <>
-                <h2>Xuất video</h2>
+                <h2>Xuất video {portrait ? "dọc 9:16" : "ngang 16:9"}</h2>
                 <div className="length-grid" role="radiogroup" aria-label="Độ dài video">
-                  {LENGTHS.map((l) => (
-                    <button
-                      key={l.loops}
-                      role="radio"
-                      aria-checked={loops === l.loops}
-                      className={`length ${loops === l.loops ? "on" : ""}`}
-                      onClick={() => setLoops(l.loops)}
-                    >
+                  {lengths.map((l) => (
+                    <button key={l.sec} role="radio" aria-checked={target === l.sec} className={`length ${target === l.sec ? "on" : ""}`} onClick={() => setTarget(l.sec)}>
                       <strong>{l.label}</strong>
-                      <small>≈ {Math.round(l.loops * 18)} MB</small>
+                      <small>≈ {l.mb} MB</small>
                     </button>
                   ))}
                 </div>
-                <p className="hint">{LENGTHS.find((l) => l.loops === loops)?.hint || "Video lặp lại nhiều vòng trong một file"}</p>
+                <p className="hint">
+                  {chosen.loops === 1
+                    ? portrait
+                      ? "Một vòng, vừa để đăng TikTok / Reels / Story."
+                      : "Nhẹ nhất. Bật chế độ lặp lại trên TV."
+                    : `Lặp ${chosen.loops} vòng trong một file, cho TV không có chế độ lặp lại.`}
+                  {musicOn ? ` Có nhạc nền: ${data.music.name}.` : ""}
+                </p>
                 <div className="modal-actions">
                   <button className="btn primary" onClick={startExport}>
-                    Xuất MP4 {LENGTHS.find((l) => l.loops === loops)?.label}
+                    Xuất MP4 {chosen.label}
                   </button>
                   <button className="btn ghost" onClick={savePoster}>
                     Tải ảnh PNG
                   </button>
                 </div>
-                <p className="hint">
-                  Cắm laptop vào TV qua HDMI? Không cần xuất, dùng nút <strong>⛶ Trình chiếu</strong>.
-                </p>
+                {!portrait && (
+                  <p className="hint">
+                    Cắm laptop vào TV qua HDMI? Không cần xuất, dùng nút <strong>⛶ Trình chiếu</strong>.
+                  </p>
+                )}
               </>
             )}
             {exp.kind === "paywall" && (
               <>
                 <h2>Xuất video không watermark</h2>
                 <p>
-                  Mở khoá video <strong>{eventTitle(data)}</strong> với mẫu <strong>{template.name}</strong>: tải MP4
-                  Full HD không giới hạn số lần.
+                  Mở khoá video <strong>{eventTitle(data)}</strong> với mẫu <strong>{template.name}</strong>: tải MP4 Full HD không giới hạn số lần.
                 </p>
                 <div className="price">{formatVnd(ent.price)}</div>
                 <div className="modal-actions">
@@ -454,7 +416,7 @@ export default function Editor() {
             {exp.kind === "paying" && <p>Đang tạo phiên thanh toán…</p>}
             {exp.kind === "running" && (
               <>
-                <h2>Đang xuất video…</h2>
+                <h2>{exp.label}</h2>
                 <div className="progress">
                   <div style={{ width: `${Math.round(exp.progress * 100)}%` }} />
                 </div>
@@ -467,7 +429,8 @@ export default function Editor() {
             {exp.kind === "done" && (
               <>
                 <h2>Video đã sẵn sàng 🎉</h2>
-                <video src={exp.url} controls loop autoPlay muted playsInline className="result-video" />
+                <video src={exp.url} controls loop autoPlay playsInline className={`result-video ${portrait ? "portrait" : ""}`} />
+                {exp.note && <p className="warn">{exp.note}</p>}
                 <div className="modal-actions">
                   <button className="btn primary" onClick={() => download(exp.blob, `${fileName}.${exp.ext}`)}>
                     Tải về ({(exp.blob.size / 1e6).toFixed(0)} MB)
@@ -483,9 +446,10 @@ export default function Editor() {
                 </div>
                 {exp.ext === "webm" ? (
                   <p className="hint">
-                    Trình duyệt này chưa hỗ trợ xuất MP4 nên video ở dạng WebM (nhiều TV không đọc được). Hãy mở bằng
-                    Chrome hoặc Edge bản mới để có MP4.
+                    Trình duyệt này chưa hỗ trợ xuất MP4 nên video ở dạng WebM (nhiều TV không đọc được). Hãy mở bằng Chrome hoặc Edge bản mới để có MP4.
                   </p>
+                ) : portrait ? (
+                  <p className="hint">Đăng lên TikTok, Facebook Reels hoặc Story: chọn file vừa tải ở mục tải lên video.</p>
                 ) : (
                   <details className="tv-guide" open>
                     <summary>Cách chiếu lên TV</summary>
@@ -493,8 +457,7 @@ export default function Editor() {
                       <li>Chép file .mp4 vào USB (định dạng FAT32 hoặc exFAT).</li>
                       <li>Cắm USB vào TV → mở ứng dụng Media / Trình phát video / USB.</li>
                       <li>
-                        Chọn video, bật <strong>Lặp lại (Repeat)</strong> trong menu tuỳ chọn. TV không có chế độ này thì
-                        xuất bản 5 phút.
+                        Chọn video, bật <strong>Lặp lại (Repeat)</strong> trong menu tuỳ chọn. TV không có chế độ này thì xuất bản 5 phút.
                       </li>
                       <li>Hoặc tải lên YouTube (chế độ không công khai) rồi mở trên Smart TV và bật lặp lại.</li>
                     </ol>

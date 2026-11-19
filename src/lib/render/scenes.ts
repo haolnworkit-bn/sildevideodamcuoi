@@ -105,7 +105,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
     dy: 30,
     draw: (y, p) => {
       const backed = !!spec.titleBacking;
-      if (spec.titleBacking) spec.titleBacking(rc, cx, y, Math.min(o.maxW + 60, rc.W - 300), 190, p);
+      if (spec.titleBacking) spec.titleBacking(rc, cx, y, Math.min(o.maxW + 60, portrait ? 760 : 1120), 190, p);
       if (caps) {
         ctx.save();
         setSpacing(ctx, 20);
@@ -114,7 +114,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
         ctx.fillText(title, cx, y);
         ctx.restore();
       } else {
-        fitFont(ctx, title, (s) => `400 ${s}px ${fonts.script}`, backed ? Math.min(o.maxW, rc.W - 460) : o.maxW, backed ? 150 : 190);
+        fitFont(ctx, title, (s) => `400 ${s}px ${fonts.script}`, backed ? Math.min(o.maxW, portrait ? 600 : 920) : o.maxW, backed ? 150 : 190);
         ctx.fillStyle = paint(ctx, o.pal.heading, y, 170);
         ctx.fillText(title, cx, y + 8);
       }
@@ -188,7 +188,7 @@ function drawBlock(rc: RenderContext, lt: number, items: BlockItem[], top: numbe
 function fadedPhoto(rc: RenderContext, photo: Photo) {
   const { ctx, W, H, portrait, data } = rc;
   const left = data.photoSide === "left";
-  const [x0, y0, w, h] = portrait ? [0, 0, W, 1240] : left ? [0, 0, 1060, H] : [860, 0, 1060, H];
+  const [x0, y0, w, h] = portrait ? [0, 0, W, 1120] : left ? [0, 0, 1060, H] : [860, 0, 1060, H];
   const c = scratchCanvas("faded", w, h);
   const s = c.getContext("2d");
   if (!s) return;
@@ -224,13 +224,13 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
 
   if (mode === "frame" && photo) {
     const left = data.photoSide === "left";
-    const frame: Rect = portrait ? [170, 150, 740, 930] : left ? [190, 150, 620, 780] : [1110, 150, 620, 780];
+    const frame: Rect = portrait ? [190, 150, 700, 860] : left ? [190, 150, 620, 780] : [1110, 150, 620, 780];
     const cx = portrait ? W / 2 : left ? 1330 : 600;
     const maxW = portrait ? 920 : 840;
     drawEntering(ctx, enter(lt, 0.1, 1.5), 40, () => tpl.photoFrame(ctx, photo, ...frame, rc));
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW });
     const h = blockHeight(items);
-    drawBlock(rc, lt, items, portrait ? 1160 + (680 - h) / 2 : (H - h) / 2);
+    drawBlock(rc, lt, items, portrait ? 1070 + (560 - h) / 2 : (H - h) / 2);
     return;
   }
 
@@ -275,7 +275,8 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     const cx = portrait ? W / 2 : left ? 1400 : 520;
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW: portrait ? 920 : 820 });
     const h = blockHeight(items);
-    drawBlock(rc, lt, items, portrait ? 1180 + (660 - h) / 2 : (H - h) / 2);
+    // dọc: chữ nằm ngay dưới ảnh, chừa ~350px đáy cho hoạ tiết của mẫu
+    drawBlock(rc, lt, items, portrait ? 1020 + (540 - h) / 2 : (H - h) / 2);
     return;
   }
 
