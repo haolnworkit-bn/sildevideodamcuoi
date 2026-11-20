@@ -2,6 +2,7 @@ import type { ProjectData } from "../project";
 import { drawAssetBackground, drawAssetFalling, drawAssetLayers } from "./layers";
 import { drawWatermark, runScenes, scratchCanvas, setSpacing } from "./helpers";
 import { albumScene, fitMessage, introScene, messageFont, messageScene, namesScene, type MessageFit } from "./scenes";
+import type { LayoutProbe } from "./layout";
 import { resolveFonts, resolveTheme } from "./theme";
 import { computeTimeline } from "./timeline";
 import { STAGE, type FontLibrary, type Photo, type RenderContext, type Timeline, type VideoTemplate } from "./types";
@@ -13,6 +14,8 @@ export interface FrameInput {
   fonts: FontLibrary;
   /** null = không watermark */
   watermark: string | null;
+  /** Kiểm tra bố cục (dev): ghi khung bao chữ */
+  probe?: LayoutProbe;
 }
 
 export function stageOf(data: ProjectData) {
@@ -76,6 +79,12 @@ export function renderFrame(ctx: CanvasRenderingContext2D, t: number, input: Fra
     fonts: resolveFonts(input.fonts, tpl, data.style),
     theme: resolveTheme(tpl, data.style),
     fx: data.fx,
+    probe: input.probe,
+  };
+  if (input.probe) input.probe.scale = scale;
+  const sc = (name: string) => {
+    if (input.probe) input.probe.scene = name;
+    resetDrawState(ctx);
   };
 
   // Mỗi lớp vẽ trong save/restore riêng và bắt đầu với trạng thái chữ sạch (không rò letterSpacing/align…)
@@ -95,10 +104,10 @@ export function renderFrame(ctx: CanvasRenderingContext2D, t: number, input: Fra
 
   // runScenes đã bọc save/restore cho từng cảnh; chỉ cần đặt lại trạng thái chữ trước khi vẽ
   runScenes(rc, {
-    intro: (lt) => (resetDrawState(ctx), introScene(rc, lt, tpl)),
-    message: (lt) => (resetDrawState(ctx), messageScene(rc, lt, tpl)),
-    album: (lt, s) => (resetDrawState(ctx), albumScene(rc, lt, s, tpl)),
-    names: (lt) => (resetDrawState(ctx), namesScene(rc, lt, tpl)),
+    intro: (lt) => (sc("intro"), introScene(rc, lt, tpl)),
+    message: (lt) => (sc("message"), messageScene(rc, lt, tpl)),
+    album: (lt, s) => (sc("album"), albumScene(rc, lt, s, tpl)),
+    names: (lt) => (sc("names"), namesScene(rc, lt, tpl)),
   });
 
   layer(() => {

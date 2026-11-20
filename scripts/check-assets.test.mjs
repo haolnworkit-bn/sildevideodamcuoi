@@ -4,7 +4,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
-const script = new URL("./check-assets.mjs", import.meta.url);
+import { fileURLToPath } from "node:url";
+const script = fileURLToPath(new URL("./check-assets.mjs", import.meta.url));
 function fixture(fn) {
   const dir = mkdtempSync(join(tmpdir(), "taoslide-assets-"));
   const put = (path, data) => {
@@ -25,7 +26,7 @@ function fixture(fn) {
     assets: [{ file: "decorations/flower.webp", source: "unknown", licenseStatus: "unverified", reviewStatus: "legacy-needs-audit" }]
   };
   put("public/assets/demo/manifest.json", JSON.stringify(manifest));
-  const run = (...args) => spawnSync(process.execPath, [script.pathname, "--root", dir, ...args], { encoding: "utf8" });
+  const run = (...args) => spawnSync(process.execPath, [script, "--root", dir, ...args], { encoding: "utf8" });
   try { fn({ put, run, manifest }); } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 test("valid legacy asset is warning, not blocking", () => fixture(({ run }) => {
@@ -68,4 +69,20 @@ test("invalid WebP header fails", () => fixture(({ put, run }) => {
   const r = run();
   assert.equal(r.status, 1);
   assert.match(r.stderr, /Invalid WebP header/);
+}));
+test("shared assets use their own manifest (templateId \"shared\")", () => fixture(({ put, run }) => {
+  const webp = Buffer.alloc(30);
+  webp.write("RIFF", 0); webp.writeUInt32LE(22, 4); webp.write("WEBP", 8);
+  webp.write("VP8X", 12); webp.writeUInt32LE(10, 16); webp[24] = 1; webp[27] = 1;
+  put("public/assets/shared/particles/petal.webp", webp);
+  let r = run();
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stderr, /Image not listed in manifest: shared\/particles\/petal\.webp/);
+  put("public/assets/shared/manifest.json", JSON.stringify({
+    templateId: "shared", schemaVersion: 1,
+    assets: [{ file: "particles/petal.webp", source: "chatgpt-image", licenseStatus: "unverified", reviewStatus: "visual-qa-pending" }],
+  }));
+  r = run();
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.doesNotMatch(r.stderr, /Image not listed in manifest: shared/);
 }));

@@ -3,6 +3,12 @@
 Web app tạo **video nền cho lễ dạm ngõ / ăn hỏi / đính hôn / vu quy / thành hôn**: nhập tên, ngày (tự đổi âm lịch), lời cảm ơn, ảnh, nhạc → xem trước → trình chiếu toàn màn hình hoặc xuất MP4 / PNG. Lấy cảm hứng từ cinelove.me (video-dam-ngo) nhưng **mẫu tự thiết kế, không sao chép hình/tên mẫu của họ**.
 Người dùng nói tiếng Việt → trả lời tiếng Việt. Ưu tiên hiện tại: **mẫu + dùng thực tế**. Kiếm tiền: đã có khung, đang **tắt**, làm sau.
 
+## PHÂN VAI (bắt buộc — chi tiết: `docs/AI_DESIGN_DEVELOPMENT_RULES.md`)
+- **ChatGPT (Image)** = thiết kế mỹ thuật & tạo asset (nền, hoa, hoạ tiết, khung, texture, hạt hình). **Claude** = code, tích hợp asset, chuyển động, test, xuất video. **Chủ dự án** = phê duyệt.
+- Claude KHÔNG tự vẽ hình minh hoạ bằng canvas, KHÔNG tự tạo/chỉnh/tách nền asset mỹ thuật, KHÔNG đổi phong cách đã duyệt. Thiếu asset → viết **phiếu yêu cầu kỹ thuật** (file, kích thước, alpha, ngang/dọc, layer, điểm neo, vùng an toàn) để chủ dự án chuyển cho ChatGPT. Phiếu lưu ở `docs/asset-requests/` (quy cách chung `00-QUY-CACH-CHUNG.md` + HP/QH/HD cho Đợt 1, soạn 2026-11-20, đang chờ ChatGPT). Quy trình cho chủ dự án + prompt khởi động: `docs/asset-requests/HUONG-DAN-CHATGPT.md`. Hồ sơ thiết kế mỗi mẫu: `docs/templates/<id>.md` (mẫu ở `docs/templates/README.md`). Asset dùng chung: `public/assets/shared/` có manifest riêng (templateId "shared"), checker theo dõi cả shared.
+- Asset nhận vào: đặt ở `public/assets/<id>/`, cập nhật `manifest.json` (source/licenseStatus/reviewStatus — không tự ghi "approved"/"commercial-use" khi chưa có bằng chứng), khai báo `template-assets.ts`, chụp 16:9 + 9:16, thử xuất video.
+- Git: branch riêng + PR, không tự merge. Nâng cấp mẫu theo đợt: Đợt 1 = hong-phuong, quan-ho-kinh-bac, hoa-dao-xuan; chưa có mẫu đạt chuẩn thì không làm hàng loạt.
+
 ## Công nghệ
 - Next.js 15 (App Router) + React 19 + TypeScript strict. Không Tailwind: CSS thuần trong `src/app/globals.css` (biến `--accent`, có dark mode).
 - Vẽ bằng **Canvas 2D**, không dùng thư viện animation. Xuất video bằng **WebCodecs** (`VideoEncoder` H.264 `avc1.640028`, `AudioEncoder` AAC `mp4a.40.2` 48 kHz) + **mp4-muxer@5**. Fallback: `MediaRecorder` WebM (thời gian thực).
@@ -96,10 +102,22 @@ node scripts/screenshot.mjs "C:\Program Files\Google\Chrome\Application\chrome.e
 #   /dev/frames?...&msg=<urlencoded, %0A xuống dòng>                   (thử lời cảm ơn dài/tràn)
 # WebM có nhạc trong headless cần cờ --autoplay-policy=no-user-gesture-required (không có thì AudioContext bị chặn → xuất không nhạc, audioDropped=true)
 node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123/dev/export?template=ngoc-trai&audio=1"
+# Kiểm tra bố cục chữ TỰ ĐỘNG (mọi mẫu × 2 tỉ lệ × 0/1/3 ảnh × trái/phải × bộ tên default/long/xlong), in RESULT {byKind, issues}:
+#   /dev/layout   (&t=id,id &aspect=16:9 &names=xlong &fonts=all [11 font tiêu đề] &bfonts=all) — đọc bằng probe-export.mjs
+#   fonts=all chạy lâu: tách theo aspect (probe-export chờ tối đa 240s). Mẫu mới/sửa bố cục PHẢI chạy, mục tiêu 0 lỗi.
 ```
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-20 (Sprint 1 — vùng an toàn + bố cục chữ, nhánh `sprint-1-safe-area`, CHƯA commit):
+  `src/lib/render/layout.ts`: SAFE (mép 5%), MIN_PX theo vai trò chữ, `drawText` (fillText + ghi khung bao khi bật `rc.probe`), `probeRect`,
+  `fitInk` (đo khung glyph thật, kể cả nét uốn script & letterSpacing khi căn giữa), `fitLines` (thu tới ngưỡng → 2 dòng), `fitParagraph` (≤3 dòng, ngắt ở "·"), `stackLines`.
+  scenes.ts: mọi chữ qua `drawText`; introBlock tính chiều cao từ chữ đã đo (hết lời chào đè tiêu đề ở 10 mẫu); tên/lời chào/địa chỉ dài xuống dòng thay vì thu còn 10–18px;
+  cảnh tên xếp "tên / & / tên" theo glyph; mẫu emblem tự đẩy/thu biểu tượng khi khối chữ tràn đáy; tiêu đề in hoa giảm giãn cách trước khi thu nhỏ.
+  Kết quả /dev/layout: trước 390 lỗi → 0 (1.296 render); fonts=all 9.504 render còn 1 ca ngoài lề (toi-gian + Prata + tên 7 từ: 46px < 48px).
+  Đã kiểm: typecheck, test:lunar, check:assets, test:assets 7/7 (sửa lỗi đường dẫn Windows trong test), build, xuất MP4 hong-phuong 9:16 3 vòng có nhạc = 83.4s.
+  Cũng trong nhánh: phiếu asset `docs/asset-requests/` (đã chốt HP = phương án A, QH = Đông Hồ), xoá 13 asset cũ không dùng (manifest đã cập nhật).
+  Chưa làm trong Sprint 1: design tokens / layout preset (báo cáo đề xuất), giới hạn độ dài ô nhập tên/địa chỉ + cảnh báo trong editor.
 - 2026-11-20 (Sprint 0 theo báo cáo đánh giá danhgiakhachquan/BAO_CAO_..._2026-11-20.md, nhánh `sprint-0-reliability`):
   VID-01 WebM fallback ghi đủ D×loops (đo: 2 vòng = 39.9s); AUD-01 WebM có nhạc (Web Audio → MediaStream → Opus, mờ dần 2s cuối; AudioContext bị chặn → bỏ nhạc sau 2s, không treo) + `detectExportCapability()` cảnh báo TRƯỚC khi xuất trong hộp thoại (WebM thời gian thực / không có nhạc / không hỗ trợ);
   REN-01 `fitMessage()` giảm cỡ tới min (36 ngang/38 dọc), tràn thì dòng cuối "…" + editor cảnh báo qua `checkMessageFit()` (engine.ts); ART-01 trường `preload` trong template-assets + getAsset tự đăng ký; REN-03 `resetDrawState()` mỗi lớp trong renderFrame; DOC-01 README (16 mẫu, cổng 8080, hệ thống ảnh).

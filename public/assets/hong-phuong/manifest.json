@@ -21,48 +21,6 @@
       "alpha": false
     },
     {
-      "file": "decorations/dai-lua-hong.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/dai-lua-hong.webp"
-    },
-    {
-      "file": "decorations/long-den.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/long-den.webp"
-    },
-    {
-      "file": "decorations/phuong-hoang.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/phuong-hoang.webp"
-    },
-    {
-      "file": "decorations/sen-doi.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/sen-doi.webp"
-    },
-    {
-      "file": "decorations/sen-hong.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/sen-hong.webp"
-    },
-    {
-      "file": "decorations/sen-nu.webp",
-      "source": "unknown",
-      "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hong-phuong/sen-nu.webp"
-    },
-    {
       "file": "backgrounds/portrait.webp",
       "source": "chatgpt-image",
       "licenseStatus": "commercial-use",
