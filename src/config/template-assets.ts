@@ -32,7 +32,7 @@ export interface Motion {
 export type Anchor = "tl" | "tc" | "tr" | "cl" | "c" | "cr" | "bl" | "bc" | "br";
 
 export interface ImageLayer {
-  /** Đường dẫn dưới /assets/..., vd "/assets/quan-ho-kinh-bac/sen-bong.webp" */
+  /** Đường dẫn dưới /assets/..., vd "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp" */
   src: string;
   anchor: Anchor;
   x: number;
@@ -84,14 +84,14 @@ export interface TemplateAssets {
 export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
   /** Thử nghiệm: ảnh nền màu nước hoa đào (chỉ có bản ngang). Bản dọc: còn dùng nền vẽ bằng code. */
   "hoa-dao-xuan": {
-    background: { landscape: "/assets/hoa-dao-xuan/background.webp", zoom: 0.02 },
+    background: { landscape: "/assets/hoa-dao-xuan/backgrounds/landscape.webp", zoom: 0.02 },
   },
 
   /** Bông sen màu nước đứng trong ao, đung đưa và "thở" nhẹ */
   "quan-ho-kinh-bac": {
     back: [
       {
-        src: "/assets/quan-ho-kinh-bac/sen-bong.webp",
+        src: "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp",
         anchor: "bc",
         x: 0.205,
         y: 0.95,
@@ -100,7 +100,7 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
         portrait: { x: 0.5, height: 0.2 },
       },
       {
-        src: "/assets/quan-ho-kinh-bac/sen-bong.webp",
+        src: "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp",
         anchor: "bc",
         x: 0.795,
         y: 0.95,
@@ -118,16 +118,16 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
    */
   "hong-phuong": {
     // dải lụa dùng làm hoạ tiết phía trên "Lời cảm ơn" (vẽ trong hong-phuong.ts → ornament)
-    preload: ["/assets/hong-phuong/dai-lua-hong.webp"],
+    preload: ["/assets/hong-phuong/decorations/dai-lua-hong.webp"],
     background: {
-      landscape: "/assets/hong-phuong/nen.webp",
-      portrait: "/assets/hong-phuong/nen.webp",
+      landscape: "/assets/hong-phuong/backgrounds/landscape.webp",
+      portrait: "/assets/hong-phuong/backgrounds/landscape.webp",
       zoom: 0.02,
     },
     back: [
       // Lồng đèn treo góc trên trái, đung đưa quanh điểm treo (giữa mép trên ảnh)
       {
-        src: "/assets/hong-phuong/long-den.webp",
+        src: "/assets/hong-phuong/decorations/long-den.webp",
         anchor: "tc",
         x: 0.115,
         y: 0,
@@ -137,7 +137,7 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
       },
       // Sen đôi góc dưới phải
       {
-        src: "/assets/hong-phuong/sen-doi.webp",
+        src: "/assets/hong-phuong/decorations/sen-doi.webp",
         anchor: "br",
         x: 0.985,
         y: 1,
