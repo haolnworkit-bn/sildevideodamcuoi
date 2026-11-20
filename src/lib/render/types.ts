@@ -1,5 +1,6 @@
 import type { Aspect, FxSettings, ProjectData } from "../project";
 import type { Paint } from "./helpers";
+import type { LayoutProbe } from "./layout";
 
 export type PhotoSource = HTMLImageElement | ImageBitmap | HTMLCanvasElement;
 
@@ -75,6 +76,8 @@ export interface RenderContext {
   fonts: FontSet;
   theme: Theme;
   fx: FxSettings;
+  /** Chỉ bật ở trang kiểm tra bố cục: ghi khung bao chữ/ảnh (xem layout.ts) */
+  probe?: LayoutProbe;
 }
 
 export type PhotoFrame = (

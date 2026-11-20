@@ -15,6 +15,7 @@ import {
   wrapText,
   type Paint,
 } from "./helpers";
+import { MIN_PX, drawText, fitInk, fitLines, fitParagraph, probeRect, safeBox, stackLines } from "./layout";
 import type { Photo, RenderContext, Theme, TimelineScene, VideoTemplate } from "./types";
 
 type Rect = [number, number, number, number];
@@ -73,7 +74,8 @@ interface BlockOpts {
   maxW: number;
 }
 
-/** Khối chữ giới thiệu: lời chào · tiêu đề · gạch · họ tên · ngày */
+/** Khối chữ giới thiệu: lời chào · tiêu đề · gạch · họ tên · ngày.
+ *  Chiều cao từng dòng tính theo chữ ĐÃ ĐO (font script có nét uốn cao, tên dài xuống 2 dòng). */
 function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockItem[] {
   const { ctx, data, fonts, portrait } = rc;
   const spec = tpl.intro;
@@ -83,41 +85,65 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
 
   const greet = data.greeting.trim().toUpperCase();
   if (o.greeting && greet) {
+    const font = (s: number) => `500 ${s}px ${fonts.sans}`;
+    ctx.save();
+    setSpacing(ctx, 12);
+    const fit = fitLines(ctx, greet, font, o.maxW, portrait ? 28 : 30, MIN_PX.greeting + 2);
+    ctx.restore();
+    const lh = fit.size * 1.5;
     items.push({
-      h: 66,
+      h: 66 + (fit.lines.length - 1) * lh,
       delay: 0.3,
       dy: 20,
       draw: (y) => {
         setSpacing(ctx, 12);
-        fitFont(ctx, greet, (s) => `500 ${s}px ${fonts.sans}`, o.maxW, portrait ? 28 : 30);
+        ctx.font = font(fit.size);
         ctx.fillStyle = o.pal.accent;
-        ctx.fillText(greet, cx, y);
+        const y0 = y - ((fit.lines.length - 1) * lh) / 2;
+        fit.lines.forEach((l, i) => drawText(rc, "greeting", l, cx, y0 + i * lh));
       },
     });
   }
 
   const caps = spec.title === "caps";
   const title = caps ? eventTitle(data).toUpperCase() : eventTitle(data);
+  const backed = !!spec.titleBacking;
+  const titleFont = caps ? (s: number) => `500 ${s}px ${fonts.caps}` : (s: number) => `400 ${s}px ${fonts.script}`;
+  ctx.save();
+  // chữ in hoa giãn cách 20px; chật thì giảm giãn cách trước khi thu nhỏ chữ
+  let spacing = caps ? 20 : 0;
+  setSpacing(ctx, spacing);
+  const capsTarget = portrait ? 104 : 124;
+  let titleSize = caps
+    ? fitInk(ctx, title, titleFont, o.maxW, capsTarget)
+    : fitInk(ctx, title, titleFont, backed ? Math.min(o.maxW, portrait ? 600 : 920) : o.maxW, backed ? 150 : 190);
+  if (caps && titleSize < capsTarget * 0.8) {
+    spacing = 8;
+    setSpacing(ctx, spacing);
+    titleSize = fitInk(ctx, title, titleFont, o.maxW, capsTarget);
+  }
+  const tm = ctx.measureText(title);
+  ctx.restore();
+  // khung glyph thật so với đường giữa (textBaseline = middle)
+  const asc = tm.actualBoundingBoxAscent;
+  const desc = tm.actualBoundingBoxDescent;
+  const nominal = caps ? 160 : 220;
+  const titleH = Math.max(nominal, asc + desc + 36);
   items.push({
-    h: caps ? 160 : 220,
+    h: titleH,
     delay: 0.6,
     dur: 1.3,
     dy: 30,
     draw: (y, p) => {
-      const backed = !!spec.titleBacking;
       if (spec.titleBacking) spec.titleBacking(rc, cx, y, Math.min(o.maxW + 60, portrait ? 760 : 1120), 190, p);
-      if (caps) {
-        ctx.save();
-        setSpacing(ctx, 20);
-        fitFont(ctx, title, (s) => `500 ${s}px ${fonts.caps}`, o.maxW, portrait ? 104 : 124);
-        ctx.fillStyle = paint(ctx, o.pal.heading, y, 120);
-        ctx.fillText(title, cx, y);
-        ctx.restore();
-      } else {
-        fitFont(ctx, title, (s) => `400 ${s}px ${fonts.script}`, backed ? Math.min(o.maxW, portrait ? 600 : 920) : o.maxW, backed ? 150 : 190);
-        ctx.fillStyle = paint(ctx, o.pal.heading, y, 170);
-        ctx.fillText(title, cx, y + 8);
-      }
+      // đặt sao cho khung glyph nằm giữa ô của nó (không chồm lên dòng chào phía trên)
+      const ty = y + (asc - desc) / 2;
+      ctx.save();
+      setSpacing(ctx, spacing);
+      ctx.font = titleFont(titleSize);
+      ctx.fillStyle = paint(ctx, o.pal.heading, ty, caps ? 120 : 170);
+      drawText(rc, "title", title, cx, ty);
+      ctx.restore();
     },
   });
 
@@ -127,28 +153,32 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
 
   if (spec.namesLine === "script") {
     const [a, b] = namePair(data);
+    const font = (z: number) => `400 ${z}px ${fonts.script}`;
+    const fit = fitLines(ctx, `${a} & ${b}`, font, o.maxW, 100, MIN_PX.names + 4, " & ");
+    const st = stackLines(ctx, fit.lines, fit.size * 0.12);
     items.push({
-      h: 116,
+      h: Math.max(116, st.height + 34),
       delay: 1.3,
       dy: 20,
       draw: (y) => {
-        const s = `${a} & ${b}`;
-        fitFont(ctx, s, (z) => `400 ${z}px ${fonts.script}`, o.maxW, 100);
+        ctx.font = font(fit.size);
         ctx.fillStyle = paint(ctx, o.pal.names, y, 100);
-        ctx.fillText(s, cx, y);
+        fit.lines.forEach((l, i) => drawText(rc, "names", l, cx, y + st.offsets[i]));
       },
     });
   } else {
     const [a, b] = fullNamePair(data);
+    const font = (z: number) => `italic 500 ${z}px ${bodyFontOf(rc, tpl)}`;
+    const fit = fitLines(ctx, `${a}  &  ${b}`, font, o.maxW, 58, MIN_PX.namesLine + 6, "  &  ");
+    const st = stackLines(ctx, fit.lines, fit.size * 0.2);
     items.push({
-      h: 88,
+      h: Math.max(88, st.height + 40),
       delay: 1.3,
       dy: 20,
       draw: (y) => {
-        const s = `${a}  &  ${b}`;
-        fitFont(ctx, s, (z) => `italic 500 ${z}px ${bodyFontOf(rc, tpl)}`, o.maxW, 58);
+        ctx.font = font(fit.size);
         ctx.fillStyle = o.pal.body;
-        ctx.fillText(s, cx, y);
+        fit.lines.forEach((l, i) => drawText(rc, "namesLine", l, cx, y + st.offsets[i]));
       },
     });
   }
@@ -162,7 +192,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
         setSpacing(ctx, 8);
         fitFont(ctx, `${info.weekday.toUpperCase()}  ·  ${info.solar}`, (s) => `500 ${s}px ${fonts.sans}`, o.maxW, 32);
         ctx.fillStyle = o.pal.accent;
-        ctx.fillText(`${info.weekday.toUpperCase()}  ·  ${info.solar}`, cx, y);
+        drawText(rc, "date", `${info.weekday.toUpperCase()}  ·  ${info.solar}`, cx, y);
       },
     });
   }
@@ -228,6 +258,7 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     const cx = portrait ? W / 2 : left ? 1330 : 600;
     const maxW = portrait ? 920 : 840;
     drawEntering(ctx, enter(lt, 0.1, 1.5), 40, () => tpl.photoFrame(ctx, photo, ...frame, rc));
+    probeRect(rc, "photo", ...frame);
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW });
     const h = blockHeight(items);
     drawBlock(rc, lt, items, portrait ? 1070 + (560 - h) / 2 : (H - h) / 2);
@@ -236,21 +267,37 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
 
   if (mode === "emblem" && spec.emblem) {
     const emblem = spec.emblem;
-    const cy = portrait ? 650 : 400;
-    const r = portrait ? 240 : 175;
+    let cy = portrait ? 650 : 400;
+    let r = portrait ? 240 : 175;
+    const gapBelow = portrait ? 80 : 40;
+    const greetGap = portrait ? 100 : 62;
+    const items = introBlock(rc, tpl, { greeting: false, divider: false, date: true, pal, cx: W / 2, maxW: portrait ? 920 : 1400 });
+    // khối chữ cao (tên dài 2 dòng): đẩy biểu tượng lên, hết chỗ thì thu nhỏ biểu tượng
+    const safe = safeBox(W, H);
+    const over = cy + r + gapBelow + blockHeight(items) - safe.y1;
+    if (over > 0) {
+      const up = Math.min(over, cy - r - greetGap - 40 - safe.y0);
+      cy -= Math.max(0, up);
+      const rest = over - Math.max(0, up);
+      if (rest > 0) {
+        r = Math.max(r * 0.6, r - rest / 2);
+        cy -= rest / 2;
+      }
+    }
     const greet = data.greeting.trim().toUpperCase();
     if (greet) {
       drawEntering(ctx, enter(lt, 0.2), 20, () => {
         center(ctx);
         setSpacing(ctx, 14);
-        fitFont(ctx, greet, (s) => `500 ${s}px ${rc.fonts.sans}`, portrait ? 900 : 1200, portrait ? 28 : 30);
+        const fit = fitLines(ctx, greet, (s) => `500 ${s}px ${rc.fonts.sans}`, portrait ? 900 : 1200, portrait ? 28 : 30, MIN_PX.greeting + 2);
         ctx.fillStyle = pal.accent;
-        ctx.fillText(greet, W / 2, cy - r - (portrait ? 100 : 62));
+        const lh = fit.size * 1.5;
+        fit.lines.forEach((l, i) => drawText(rc, "greeting", l, W / 2, cy - r - greetGap - (fit.lines.length - 1 - i) * lh));
       });
     }
     drawEntering(ctx, enter(lt, 0.3, 1.4), 30, () => emblem(rc, W / 2, cy, r, photo));
-    const items = introBlock(rc, tpl, { greeting: false, divider: false, date: true, pal, cx: W / 2, maxW: portrait ? 920 : 1400 });
-    drawBlock(rc, lt, items, cy + r + (portrait ? 80 : 40));
+    probeRect(rc, "emblem", W / 2 - r * 0.8, cy - r * 0.8, r * 1.6, r * 1.6);
+    drawBlock(rc, lt, items, cy + r + gapBelow);
     return;
   }
 
@@ -344,14 +391,14 @@ export function messageScene(rc: RenderContext, lt: number, tpl: VideoTemplate) 
     center(ctx);
     ctx.font = `400 ${portrait ? 110 : 120}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, headY, 120);
-    ctx.fillText("Lời cảm ơn", cx, headY);
+    drawText(rc, "heading", "Lời cảm ơn", cx, headY);
   });
   lines.forEach((line, i) => {
     drawEntering(ctx, enter(lt, 0.7 + i * 0.22, 1.2), 24, () => {
       center(ctx);
       ctx.font = font(size);
       ctx.fillStyle = pal.body;
-      ctx.fillText(line, cx, top + i * lh);
+      drawText(rc, "message", line, cx, top + i * lh);
     });
   });
   drawEntering(ctx, enter(lt, 1.4 + lines.length * 0.2), 0, () =>
@@ -381,19 +428,21 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
     center(ctx);
     ctx.font = `400 ${portrait ? 120 : 130}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, 0, 130);
-    ctx.fillText("Khoảnh khắc", textCx, portrait ? 190 : 420);
+    drawText(rc, "heading", "Khoảnh khắc", textCx, portrait ? 190 : 420);
   });
   if (!portrait) {
     drawEntering(ctx, enter(lt, 0.5), 0, () => drawDivider(ctx, textCx, 530, 200, pal.line));
     const [a, b] = fullNamePair(rc.data);
     drawEntering(ctx, enter(lt, 0.7), 20, () => {
       center(ctx);
-      fitFont(ctx, `${a}  &  ${b}`, (z) => `italic 500 ${z}px ${bodyFontOf(rc, tpl)}`, 760, 54);
+      const fit = fitLines(ctx, `${a}  &  ${b}`, (z) => `italic 500 ${z}px ${bodyFontOf(rc, tpl)}`, 760, 54, MIN_PX.namesLine + 4, "  &  ");
       ctx.fillStyle = pal.body;
-      ctx.fillText(`${a}  &  ${b}`, textCx, 620);
+      const lh = fit.size * 1.3;
+      fit.lines.forEach((l, i) => drawText(rc, "namesLine", l, textCx, 620 - ((fit.lines.length - 1) * lh) / 2 + i * lh));
     });
   }
 
+  probeRect(rc, "photo", ...frame);
   // ảnh chuyển lần lượt (cross-fade)
   const p0 = enter(lt, 0, 1.2);
   photos.forEach((ph, i) => {
@@ -442,16 +491,27 @@ function drawNames(
   const one = `${a}  &  ${b}`;
   ctx.fillStyle = paint(ctx, fill, cy, 260);
   if (!forceStack && ctx.measureText(one).width <= maxW) {
-    ctx.fillText(one, cx, cy);
+    drawText(rc, "names", one, cx, cy);
     return;
   }
-  const sz = Math.min(fitFont(ctx, a, f, maxW, Math.min(big, 124)), fitFont(ctx, b, f, maxW, Math.min(big, 124)));
-  const gap = sz * 0.85;
+  const sz = Math.min(fitInk(ctx, a, f, maxW, Math.min(big, 124)), fitInk(ctx, b, f, maxW, Math.min(big, 124)));
+  // xếp 3 dòng tên / & / tên theo khung glyph thật (nét script cao, có dấu tiếng Việt)
   ctx.font = f(sz);
-  ctx.fillText(a, cx, cy - gap);
-  ctx.fillText(b, cx, cy + gap);
-  ctx.font = f(Math.round(sz * 0.65));
-  ctx.fillText("&", cx, cy);
+  const ma = ctx.measureText(a);
+  const mb = ctx.measureText(b);
+  const amp = Math.round(sz * 0.65);
+  ctx.font = f(amp);
+  const mm = ctx.measureText("&");
+  const pad = sz * 0.08;
+  const yAmp = cy;
+  const yA = yAmp - mm.actualBoundingBoxAscent - pad - ma.actualBoundingBoxDescent;
+  const yB = yAmp + mm.actualBoundingBoxDescent + pad + mb.actualBoundingBoxAscent;
+  // căn cả khối quanh cy
+  const shift = (yA - ma.actualBoundingBoxAscent + yB + mb.actualBoundingBoxDescent) / 2 - cy;
+  drawText(rc, "namesLine", "&", cx, yAmp - shift);
+  ctx.font = f(sz);
+  drawText(rc, "names", a, cx, yA - shift);
+  drawText(rc, "names", b, cx, yB - shift);
 }
 
 export function drawDateBlock(
@@ -478,18 +538,18 @@ export function drawDateBlock(
   ctx.fillStyle = paint(ctx, theme.names, 0, 150);
   ctx.font = `600 150px ${fonts.display}`;
   ctx.textAlign = "center";
-  ctx.fillText(info.day, 0, 6);
+  drawText(rc, "date", info.day, 0, 6);
 
   ctx.fillStyle = theme.accent;
   ctx.font = `500 36px ${fonts.sans}`;
   setSpacing(ctx, 6);
   ctx.textAlign = "right";
-  ctx.fillText(info.weekday.toUpperCase(), -160, 0);
+  drawText(rc, "date", info.weekday.toUpperCase(), -160, 0);
 
   ctx.textAlign = "left";
-  ctx.fillText(`THÁNG ${info.month}`, 160, -24);
+  drawText(rc, "date", `THÁNG ${info.month}`, 160, -24);
   ctx.font = `600 40px ${fonts.sans}`;
-  ctx.fillText(info.year, 160, 28);
+  drawText(rc, "date", info.year, 160, 28);
   ctx.restore();
 }
 
@@ -528,6 +588,7 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
   if (frame && photo) {
     const f = frame;
     drawEntering(ctx, enter(lt, 0.15, 1.4), 40, () => tpl.photoFrame(ctx, photo, ...f, rc));
+    probeRect(rc, "photo", ...f);
   }
 
   drawEntering(ctx, enter(lt, 0.1), 20, () => {
@@ -535,7 +596,7 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     setSpacing(ctx, 14);
     fitFont(ctx, eventTitle(data).toUpperCase(), (s) => `500 ${s}px ${fonts.sans}`, maxW, 32);
     ctx.fillStyle = pal.accent;
-    ctx.fillText(eventTitle(data).toUpperCase(), cx, y.label);
+    drawText(rc, "label", eventTitle(data).toUpperCase(), cx, y.label);
   });
 
   drawEntering(ctx, enter(lt, 0.4, 1.3), 30, () => {
@@ -550,16 +611,21 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
       center(ctx);
       fitFont(ctx, `(${lunar})`, (z) => `italic 500 ${z}px ${bf}`, maxW, 42);
       ctx.fillStyle = pal.body;
-      ctx.fillText(`(${lunar})`, cx, y.lunar);
+      drawText(rc, "lunar", `(${lunar})`, cx, y.lunar);
     });
   }
   if (detail) {
     drawEntering(ctx, enter(lt, 1.7), 20, () => {
       center(ctx);
       setSpacing(ctx, 2);
-      fitFont(ctx, detail, (sz) => `400 ${sz}px ${fonts.sans}`, maxW, 32);
+      // địa chỉ dài: xuống 2 dòng (ngắt ở "·" nếu có) thay vì thu chữ tới mức không đọc được
+      const fit = fitParagraph(ctx, detail, (sz) => `400 ${sz}px ${fonts.sans}`, maxW, 32, MIN_PX.detail + 4, 3, "  ·  ");
       ctx.fillStyle = pal.accent;
-      ctx.fillText(detail, cx, y.detail);
+      const lh = fit.size * 1.45;
+      // nhiều dòng: chỉ đẩy lên vừa đủ để dòng cuối không lọt khỏi vùng an toàn
+      const room = safeBox(W, rc.H).y1 - fit.size - y.detail;
+      const y0 = y.detail - Math.max(0, (fit.lines.length - 1) * lh - room);
+      fit.lines.forEach((l, i) => drawText(rc, "detail", l, cx, y0 + i * lh));
     });
   }
 }

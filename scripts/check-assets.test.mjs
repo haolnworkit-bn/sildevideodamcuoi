@@ -4,7 +4,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
-const script = new URL("./check-assets.mjs", import.meta.url);
+import { fileURLToPath } from "node:url";
+const script = fileURLToPath(new URL("./check-assets.mjs", import.meta.url));
 function fixture(fn) {
   const dir = mkdtempSync(join(tmpdir(), "taoslide-assets-"));
   const put = (path, data) => {
@@ -25,7 +26,7 @@ function fixture(fn) {
     assets: [{ file: "decorations/flower.webp", source: "unknown", licenseStatus: "unverified", reviewStatus: "legacy-needs-audit" }]
   };
   put("public/assets/demo/manifest.json", JSON.stringify(manifest));
-  const run = (...args) => spawnSync(process.execPath, [script.pathname, "--root", dir, ...args], { encoding: "utf8" });
+  const run = (...args) => spawnSync(process.execPath, [script, "--root", dir, ...args], { encoding: "utf8" });
   try { fn({ put, run, manifest }); } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 test("valid legacy asset is warning, not blocking", () => fixture(({ run }) => {
