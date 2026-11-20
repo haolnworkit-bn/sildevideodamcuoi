@@ -27,7 +27,10 @@ src/lib/render/scenes.ts      BỐ CỤC dùng chung, tự xếp ngang/dọc: in
 src/lib/render/theme.ts       resolveTheme/resolveFonts: áp tuỳ chỉnh màu/font của người dùng lên mẫu
 src/lib/render/helpers.ts     runScenes (cross-fade + chuyển cảnh fade/zoom/slide), makeLoopParticles/particleAt/particlesFor,
                               fitFont, wrapText, goldPaint, deepGoldPaint, sprite/drawSprite (cache), scratchCanvas, drawPhoto, archPath, watermark
-src/lib/render/templates/     11 mẫu + index.ts (TEMPLATES, getTemplate, COLOR_TAGS)
+src/lib/render/templates/     16 mẫu + index.ts (TEMPLATES, getTemplate, COLOR_TAGS)
+src/config/template-assets.ts ẢNH trang trí theo mẫu (background ngang/dọc, back/front, falling, preload) — xem QUY TẮC ẢNH
+src/lib/render/layers.ts, assets.ts  vẽ/nạp ảnh trang trí; getAsset tự đăng ký + cảnh báo dev nếu url chưa khai báo
+scripts/check-assets.mjs      npm run check:assets: file ảnh tồn tại, getAsset đã khai báo, liệt kê ảnh thừa (không tự xoá)
 src/lib/export/video.ts       exportVideo (loops, audio), decodeAudio, exportPoster (PNG)
 src/lib/billing/entitlements.ts computeEntitlement(template, unlocked) → watermark/cleanExport/price; startCheckout
 src/components/Editor.tsx     state chính: data, ảnh (IDB), nhạc, tab, xuất/paywall/hướng dẫn TV, presenter
@@ -58,7 +61,7 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 
 ## Đã hoàn thành
 - MVP: 5 loại lễ, âm lịch, nhập liệu, preview, xuất MP4 Full HD lặp liền mạch, PNG, bản nháp tự lưu.
-- 11 mẫu, lọc theo màu rạp. Mỗi mẫu có bản 16:9 & 9:16, có/không ảnh.
+- 16 mẫu (11 gốc + tet-doan-vien, dua-xanh, toi-gian, quan-ho-kinh-bac, hong-phuong), lọc theo màu rạp. Mỗi mẫu có bản 16:9 & 9:16, có/không ảnh.
 - Tuỳ chỉnh: font tiêu đề/nội dung, 3 màu, tên gọi/đầy đủ, thứ tự tên, lời chào, bật/tắt cảnh lời cảm ơn & khoảnh khắc.
 - Tối đa 6 ảnh (MAX_PHOTOS), cảnh "Khoảnh khắc", căn dọc từng ảnh, ảnh trái/phải.
 - Hiệu ứng: mật độ hạt, kiểu chuyển cảnh. Nhạc nền: upload, âm lượng, phát khi trình chiếu, ghép AAC vào MP4.
@@ -74,6 +77,7 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 ## Lỗi/bẫy đã gặp
 - `radialGlow` phải mờ về cùng màu alpha 0 (về `rgba(0,0,0,0)` sẽ ra quầng xám).
 - Grid trên mobile phải dùng `minmax(0,1fr)`, không thì tràn ngang. **Cả trên desktop**: `.field-group`/`.stack`/`.row` đã đổi sang `minmax(0,1fr)` (nút `white-space:nowrap` từng làm cột rộng hơn panel → thẻ Nhạc nền bị cắt chữ). Nút trong panel có chữ dài dùng `.lib-track` (tên trên, mô tả dưới, tự xuống dòng), đừng dùng `.btn` (nowrap).
+- **KHÔNG chạy 2 dev server cùng lúc** (chúng dùng chung `.next` → hỏng cache, gây 404/500 cho cả server của người dùng). Trước khi bật server, kiểm tra cổng 8080: nếu người dùng đang chạy `npm run dev` thì DÙNG LUÔN server đó (http://localhost:8080), không xoá `.next`, không `npm run build` khi nó đang chạy.
 - Dev server hay hỏng cache (404 `/dev/*`, 500 "__webpack_modules__ is not a function", treo "Compiling /editor"): tắt đúng tiến trình đang nghe cổng (PowerShell `Get-NetTCPConnection -LocalPort`), xoá `.next`, chạy lại. Chụp editor theo thẻ: script tạm `tabshot.mjs` (CDP, bấm nút theo chữ) ở scratchpad.
 - Sau `npm run build`, dev server có thể trả 404 cho `/dev/*` → xoá `.next` rồi chạy lại `npm run dev`.
 - Chrome headless có độ rộng cửa sổ tối thiểu → test mobile phải dùng `Emulation.setDeviceMetricsOverride` (scripts/screenshot.mjs).
@@ -82,17 +86,25 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 
 ## Cách kiểm thử nhanh (không cần đọc code)
 ```
-npx next dev -p 3123            # chạy nền
+npx next dev -p 3124            # chạy nền (npm run dev dùng cổng 8080)
+npm run typecheck && npm run test:lunar && npm run check:assets
 # Ảnh tĩnh mọi cảnh của mẫu (id đầy đủ, vd hoa-dao-xuan):
 #   /dev/frames?t=<id,id>&aspect=9:16&photos=3&long=1&tf=<fontKey>&hc=<hex không #>
 node scripts/screenshot.mjs "C:\Program Files\Google\Chrome\Application\chrome.exe" <profileDir> "<url>" out.png 1600 3000
 # Kiểm tra xuất video (in RESULT ... duration, size, audioDecodedBytes):
-#   /dev/export?template=<id>&aspect=9:16&photos=3&audio=1&loops=15
+#   /dev/export?template=<id>&aspect=9:16&photos=3&audio=1&loops=15   (&webm=1: ép nhánh WebM thời gian thực)
+#   /dev/frames?...&msg=<urlencoded, %0A xuống dòng>                   (thử lời cảm ơn dài/tràn)
+# WebM có nhạc trong headless cần cờ --autoplay-policy=no-user-gesture-required (không có thì AudioContext bị chặn → xuất không nhạc, audioDropped=true)
 node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123/dev/export?template=ngoc-trai&audio=1"
 ```
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-20 (Sprint 0 theo báo cáo đánh giá danhgiakhachquan/BAO_CAO_..._2026-11-20.md, nhánh `sprint-0-reliability`):
+  VID-01 WebM fallback ghi đủ D×loops (đo: 2 vòng = 39.9s); AUD-01 WebM có nhạc (Web Audio → MediaStream → Opus, mờ dần 2s cuối; AudioContext bị chặn → bỏ nhạc sau 2s, không treo) + `detectExportCapability()` cảnh báo TRƯỚC khi xuất trong hộp thoại (WebM thời gian thực / không có nhạc / không hỗ trợ);
+  REN-01 `fitMessage()` giảm cỡ tới min (36 ngang/38 dọc), tràn thì dòng cuối "…" + editor cảnh báo qua `checkMessageFit()` (engine.ts); ART-01 trường `preload` trong template-assets + getAsset tự đăng ký; REN-03 `resetDrawState()` mỗi lớp trong renderFrame; DOC-01 README (16 mẫu, cổng 8080, hệ thống ảnh).
+  Đã kiểm: typecheck, test:lunar 6/6, check:assets 0 lỗi, build sạch; MP4 3 vòng có nhạc = 60.01s; WebM 2 vòng có nhạc (autoplay) audio>0. Còn: WebM của MediaRecorder KHÔNG có duration trong header (TV có thể không tua được) — cần remux/sửa header sau; cảnh báo export chưa thử trên trình duyệt thật không có WebCodecs.
+  Việc tiếp theo theo báo cáo: Sprint 1 (safe area + text layout, tên dài), 3 mẫu chủ lực (cần ảnh từ người dùng), thumbnail theo tỉ lệ, preload theo mẫu đang xem, export/import project.
 - 2026-11-19 (mẫu hong-phuong): thêm mẫu `hong-phuong` (tổng 16 mẫu) từ ảnh người dùng sưu tầm; code mẫu chỉ có màu/gradient dự phòng/khung vòm/hạt lấp lánh, mọi hình minh hoạ là ảnh qua `template-assets.ts`. tsc sạch; đã chụp 16:9 & 9:16 (có/không ảnh). Còn: ở cảnh intro CÓ ẢNH khổ ngang, dòng tên dài sát nhẹ vào phượng bên phải; khổ dọc cảnh intro có ảnh chữ đè lên phượng/sen đáy. Chưa thử xuất MP4. Dev server đang ở cổng 3124.
 - 2026-11-19 (hệ thống ảnh): thêm hệ thống ảnh trang trí theo mẫu (xem "QUY TẮC ẢNH"). Đã thử với hoa-dao-xuan (nền ngang `background.webp`) và quan-ho-kinh-bac (sen `sen-bong.webp`, ảnh sen do người dùng tự lấy từ nguồn free — ảnh trông giống ảnh sen trong mẫu cinelove, nên nhắc người dùng xác nhận giấy phép trước khi công bố). tsc sạch; đã chụp cả 16:9 & 9:16. Dev server: cổng 3123 bị treo → đang chạy ở 3124. Chưa thử xuất MP4 với ảnh, chưa commit.
 - 2026-11-19 (cuối phiên): thêm mẫu `quan-ho-kinh-bac` (tổng 15 mẫu): giấy điệp, khung Đông Hồ, liền anh (khăn xếp, áo the, ô) + liền chị (nón quai thao, áo mớ ba mớ bảy) vẽ bằng canvas đứng hai bên, ao sen (sóng lan, bông sen thở nhịp, lá bồng bềnh), vệt sáng quét giấy điệp, cánh sen rơi; nhạc "Ngũ cung" trong thư viện. Còn lỗi nhỏ: ở cảnh intro CÓ ẢNH, chữ tên đè nhẹ lên liền chị (16:9) / hai nhân vật (9:16). Chưa thử xuất MP4 mẫu này. Mẫu cinelove KHÔNG được xem (trang SPA), chuyển động tự thiết kế.

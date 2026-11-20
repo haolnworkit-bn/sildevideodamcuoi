@@ -288,6 +288,44 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
 // Cảnh 2: Lời cảm ơn
 // =====================================================================
 
+export interface MessageFit {
+  lines: string[];
+  size: number;
+  /** true = ở cỡ chữ nhỏ nhất vẫn không vừa → đã rút gọn, dòng cuối có "…" (editor phải cảnh báo) */
+  overflow: boolean;
+}
+
+/**
+ * Xếp lời cảm ơn: giảm cỡ chữ từng bước tới ngưỡng tối thiểu (vẫn đọc được trên TV) cho tới khi vừa khung.
+ * Không bao giờ cắt bớt dòng một cách im lặng: nếu vẫn tràn thì dòng cuối có "…" và overflow = true.
+ */
+export function fitMessage(ctx: CanvasRenderingContext2D, text: string, font: (size: number) => string, portrait: boolean): MessageFit {
+  const maxSpan = portrait ? 680 : 400; // khoảng cách tối đa từ dòng đầu tới dòng cuối (px)
+  const baseW = portrait ? 880 : 1320;
+  const start = portrait ? 56 : 58;
+  const min = portrait ? 38 : 36;
+  const widthFor = (size: number) => (size <= 50 ? baseW + 60 : baseW);
+  for (let size = start; size >= min; size -= 2) {
+    ctx.font = font(size);
+    const lines = wrapText(ctx, text, widthFor(size));
+    if ((lines.length - 1) * size * 1.45 <= maxSpan) return { lines, size, overflow: false };
+  }
+  ctx.font = font(min);
+  const w = widthFor(min);
+  const all = wrapText(ctx, text, w);
+  const maxLines = Math.floor(maxSpan / (min * 1.45)) + 1;
+  const lines = all.slice(0, maxLines);
+  let last = lines[lines.length - 1] ?? "";
+  while (last && ctx.measureText(`${last}…`).width > w) last = last.replace(/\s*\S+$/, "");
+  lines[lines.length - 1] = `${last}…`;
+  return { lines, size: min, overflow: true };
+}
+
+export const messageFont = (rc: Pick<RenderContext, "fonts">, tpl: VideoTemplate) => {
+  const bf = tpl.bodyFont === "display" ? rc.fonts.display : rc.fonts.serif;
+  return (size: number) => `italic 500 ${size}px ${bf}`;
+};
+
 export function messageScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
   const { ctx, W, H, data, portrait, fonts } = rc;
   const pal = rc.theme;
@@ -295,17 +333,8 @@ export function messageScene(rc: RenderContext, lt: number, tpl: VideoTemplate) 
   const mid = H / 2 + (portrait ? 40 : 100);
   center(ctx);
 
-  const bf = bodyFontOf(rc, tpl);
-  const font = (size: number) => `italic 500 ${size}px ${bf}`;
-  const maxW = portrait ? 880 : 1320;
-  let size = portrait ? 56 : 58;
-  ctx.font = font(size);
-  let lines = wrapText(ctx, data.message, maxW);
-  if (lines.length > (portrait ? 8 : 5)) {
-    size = portrait ? 46 : 46;
-    ctx.font = font(size);
-    lines = wrapText(ctx, data.message, maxW + 60).slice(0, portrait ? 11 : 7);
-  }
+  const font = messageFont(rc, tpl);
+  const { lines, size } = fitMessage(ctx, data.message, font, portrait);
   const lh = size * 1.45;
   const top = mid - ((lines.length - 1) * lh) / 2;
   const headY = top - (portrait ? 170 : 150);

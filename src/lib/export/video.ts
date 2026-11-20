@@ -15,6 +15,20 @@ export interface ExportOptions extends FrameInput {
   volume?: number;
   onProgress?: (p: number) => void;
   signal?: AbortSignal;
+  /** Chỉ để kiểm thử (/dev/export?webm=1): bỏ qua MP4, ép dùng nhánh WebM thời gian thực */
+  forceWebm?: boolean;
+}
+
+/** Trình duyệt hiện tại xuất được gì — để UI báo TRƯỚC khi người dùng bấm xuất */
+export interface ExportCapability {
+  /** MP4 H.264 qua WebCodecs: nhanh hơn thời gian thực, TV đọc tốt */
+  mp4: boolean;
+  /** MP4 có nhạc (AAC) */
+  mp4Audio: boolean;
+  /** WebM qua MediaRecorder: ghi theo THỜI GIAN THỰC (video 5 phút = chờ 5 phút) */
+  webm: boolean;
+  /** WebM có nhạc (Opus, trộn qua Web Audio) */
+  webmAudio: boolean;
 }
 
 export interface ExportResult {
@@ -49,9 +63,26 @@ async function aacSupported(): Promise<boolean> {
   }
 }
 
-/** Xuất video: ưu tiên MP4 H.264 qua WebCodecs (nhanh hơn thời gian thực), fallback WebM. */
+function pickWebmMime(withAudio: boolean): string | undefined {
+  if (typeof MediaRecorder === "undefined") return undefined;
+  const list = withAudio
+    ? ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+    : ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+  return list.find((m) => MediaRecorder.isTypeSupported(m));
+}
+
+export async function detectExportCapability(W: number, H: number, fps = 30): Promise<ExportCapability> {
+  const hasVE = typeof window !== "undefined" && "VideoEncoder" in window;
+  const mp4 = hasVE && !!(await pickH264Config(W, H, fps));
+  const mp4Audio = mp4 && (await aacSupported());
+  const webm = !!pickWebmMime(false);
+  const webmAudio = typeof AudioContext !== "undefined" && !!pickWebmMime(true);
+  return { mp4, mp4Audio, webm, webmAudio };
+}
+
+/** Xuất video: ưu tiên MP4 H.264 qua WebCodecs (nhanh hơn thời gian thực), fallback WebM thời gian thực. */
 export async function exportVideo(o: ExportOptions): Promise<ExportResult> {
-  if (typeof window !== "undefined" && "VideoEncoder" in window) {
+  if (!o.forceWebm && typeof window !== "undefined" && "VideoEncoder" in window) {
     const { W, H } = stageOf(o.data);
     const cfg = await pickH264Config(W, H, o.fps ?? 30);
     if (cfg) {
@@ -59,7 +90,8 @@ export async function exportVideo(o: ExportOptions): Promise<ExportResult> {
       return { blob: await exportMp4(o, cfg, withAudio), ext: "mp4", audioDropped: !!o.audio && !withAudio };
     }
   }
-  return { blob: await exportWebmRealtime(o), ext: "webm", audioDropped: !!o.audio };
+  const r = await exportWebmRealtime(o);
+  return { blob: r.blob, ext: "webm", audioDropped: !!o.audio && !r.hasAudio };
 }
 
 async function pickH264Config(W: number, H: number, fps: number): Promise<VideoEncoderConfig | null> {
@@ -224,41 +256,87 @@ export async function exportPoster(input: FrameInput, t: number): Promise<Blob> 
   );
 }
 
-/** Fallback cho trình duyệt chưa có WebCodecs: ghi canvas theo thời gian thực. */
-async function exportWebmRealtime(o: ExportOptions): Promise<Blob> {
+/**
+ * Fallback cho trình duyệt chưa có WebCodecs: ghi canvas theo THỜI GIAN THỰC.
+ * - Ghi đủ `loops` vòng (trước đây chỉ ghi 1 vòng dù người dùng chọn 3/5 phút).
+ * - Có nhạc: trộn qua Web Audio → MediaStream → track Opus trong WebM (lặp bài, mờ dần 2 giây cuối).
+ * Lưu ý: tab phải để mở trong lúc ghi (trình duyệt dừng requestAnimationFrame khi tab bị ẩn).
+ */
+async function exportWebmRealtime(o: ExportOptions): Promise<{ blob: Blob; hasAudio: boolean }> {
   if (typeof MediaRecorder === "undefined") throw new Error("Trình duyệt không hỗ trợ xuất video. Hãy dùng Chrome hoặc Edge bản mới.");
   const { W, H } = stageOf(o.data);
   const timeline = timelineOf(o);
   const { canvas, ctx } = makeCanvas(W, H);
   const fps = o.fps ?? 30;
   const stream = canvas.captureStream(fps);
-  const mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m));
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  const D = timeline.duration;
+  const total = D * Math.max(1, Math.round(o.loops ?? 1));
+
+  // --- nhạc nền (nếu có) ---
+  let actx: AudioContext | null = null;
+  let startAudio: (() => void) | null = null;
+  if (o.audio && typeof AudioContext !== "undefined" && pickWebmMime(true)) {
+    try {
+      actx = new AudioContext({ sampleRate: o.audio.sampleRate });
+      // Một số trình duyệt chặn âm thanh khi chưa có thao tác người dùng → resume() có thể treo; chờ tối đa 2s
+      await Promise.race([actx.resume(), new Promise((r) => setTimeout(r, 2000))]);
+      if (actx.state !== "running") throw new Error("AudioContext bị chặn");
+      const src = actx.createBufferSource();
+      src.buffer = o.audio;
+      src.loop = true;
+      const gain = actx.createGain();
+      const vol = o.volume ?? 0.8;
+      const dest = actx.createMediaStreamDestination();
+      src.connect(gain).connect(dest);
+      dest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
+      const a = actx;
+      startAudio = () => {
+        const now = a.currentTime;
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.setValueAtTime(vol, now + Math.max(0, total - 2));
+        gain.gain.linearRampToValueAtTime(0, now + total);
+        src.start(now);
+      };
+    } catch {
+      await actx?.close().catch(() => undefined);
+      actx = null;
+      startAudio = null;
+    }
+  }
+  const hasAudio = !!startAudio;
+
+  const mime = pickWebmMime(hasAudio);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000, audioBitsPerSecond: 160_000 });
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const done = new Promise<void>((r) => (rec.onstop = () => r()));
-  const D = timeline.duration;
 
   renderFrame(ctx, 0, o, timeline);
   rec.start(250);
+  startAudio?.();
   const t0 = performance.now();
-  await new Promise<void>((resolve, reject) => {
-    const loop = () => {
-      if (o.signal?.aborted) {
-        rec.stop();
-        reject(new DOMException("Đã huỷ", "AbortError"));
-        return;
-      }
-      const t = (performance.now() - t0) / 1000;
-      if (t >= D) return resolve();
-      renderFrame(ctx, t, o, timeline);
-      o.onProgress?.(t / D);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const loop = () => {
+        if (o.signal?.aborted) {
+          rec.stop();
+          reject(new DOMException("Đã huỷ", "AbortError"));
+          return;
+        }
+        const t = (performance.now() - t0) / 1000;
+        if (t >= total) return resolve();
+        renderFrame(ctx, t % D, o, timeline);
+        o.onProgress?.(t / total);
+        requestAnimationFrame(loop);
+      };
       requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-  });
-  rec.stop();
-  await done;
+    });
+    rec.stop();
+    await done;
+  } finally {
+    stream.getTracks().forEach((tr) => tr.stop());
+    await actx?.close().catch(() => undefined);
+  }
   o.onProgress?.(1);
-  return new Blob(chunks, { type: "video/webm" });
+  return { blob: new Blob(chunks, { type: "video/webm" }), hasAudio };
 }

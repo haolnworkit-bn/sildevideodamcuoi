@@ -19,6 +19,7 @@ export function preloadTemplateAssets(id: string): void {
     ...(a.back ?? []).map((l) => l.src),
     ...(a.front ?? []).map((l) => l.src),
     ...(a.falling ?? []).map((f) => f.src),
+    ...(a.preload ?? []),
   ];
   for (const u of urls) if (u) registerAsset(u);
 }

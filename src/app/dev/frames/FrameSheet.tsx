@@ -66,6 +66,8 @@ export default function FrameSheet() {
       date: "2026-12-20",
       aspect: (q.get("aspect") as Aspect) || "16:9",
       ...(long ? { groomName: "Nguyễn Hoàng Phương Nam", brideName: "Trần Ngọc Thanh Hương", nameStyle: "full" as const } : {}),
+      // &msg=... : thử lời cảm ơn dài / nhiều dòng (dùng %0A để xuống dòng)
+      ...(q.get("msg") ? { message: q.get("msg")! } : {}),
       style: {
         ...(q.get("tf") ? { titleFont: q.get("tf")! } : {}),
         ...(q.get("hc") ? { headingColor: `#${q.get("hc")}` } : {}),

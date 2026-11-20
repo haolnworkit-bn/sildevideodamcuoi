@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FEATURES } from "@/config/features";
 import { EVENT_LIST, EVENT_TYPES, type EventTypeId } from "@/lib/events";
-import { BODY_FONTS, TITLE_FONTS } from "@/lib/fonts";
+import { BODY_FONTS, FONT_LIB, TITLE_FONTS, ensureFontsLoaded } from "@/lib/fonts";
 import { MUSIC_LIBRARY, buildLibraryTrack } from "@/lib/musicLibrary";
 import { MAX_PHOTOS, dateInfo, givenName, type ProjectData, type StyleOverrides } from "@/lib/project";
-import { COLOR_TAGS, TEMPLATES } from "@/lib/render/templates";
+import { checkMessageFit } from "@/lib/render/engine";
+import { COLOR_TAGS, TEMPLATES, getTemplate } from "@/lib/render/templates";
 import type { ColorTag, Photo } from "@/lib/render/types";
 import TemplateThumb from "./TemplateThumb";
 
@@ -66,6 +67,19 @@ export function TemplatesPanel({ data, patch, photos }: { data: ProjectData; pat
 
 export function ContentPanel({ data, patch, setData, photoCount }: { data: ProjectData; patch: Patch; setData: (d: ProjectData) => void; photoCount: number }) {
   const info = dateInfo(data);
+  // Đo lời cảm ơn bằng đúng font của mẫu (đợi font tải xong để đo chính xác)
+  const [fontsReady, setFontsReady] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    ensureFontsLoaded([data.style.titleFont, data.style.bodyFont]).then(() => alive && setFontsReady((n) => n + 1));
+    return () => {
+      alive = false;
+    };
+  }, [data.style.titleFont, data.style.bodyFont]);
+  const messageFit = useMemo(
+    () => checkMessageFit({ template: getTemplate(data.templateId), data, fonts: FONT_LIB }),
+    [data.message, data.aspect, data.templateId, data.style, fontsReady],
+  );
   return (
     <>
       <section className="field-group">
@@ -153,6 +167,12 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
           <textarea rows={4} value={data.message} maxLength={320} onChange={(e) => patch({ message: e.target.value })} />
           <small className="hint">{data.message.length}/320 ký tự</small>
         </label>
+        {data.scenes.message && messageFit?.overflow && (
+          <p className="warn">
+            Lời cảm ơn quá dài với khung {data.aspect === "9:16" ? "dọc" : "ngang"}: chữ đã thu nhỏ hết mức mà vẫn không vừa,
+            phần cuối sẽ bị rút gọn thành "…". Hãy bớt chữ hoặc bớt xuống dòng.
+          </p>
+        )}
         <button className="link" onClick={() => patch({ message: EVENT_TYPES[data.eventType].defaultMessage })}>
           Dùng lời mẫu
         </button>
