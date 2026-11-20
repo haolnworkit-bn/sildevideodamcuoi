@@ -402,7 +402,7 @@ function senLa(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number) 
 }
 
 /** Khi đã có ảnh sen thật (khai báo ở src/config/template-assets.ts) thì không vẽ sen bằng code nữa */
-const SEN_URL = "/assets/quan-ho-kinh-bac/sen-bong.webp";
+const SEN_URL = "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp";
 
 /** Ao sen ở chân khung: nước, sóng lan, lá và bông sen bồng bềnh */
 function aoSen(ctx: CanvasRenderingContext2D, W: number, H: number, u: number) {
