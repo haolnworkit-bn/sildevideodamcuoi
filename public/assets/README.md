@@ -85,5 +85,5 @@ Thiếu bản nền của hướng nào thì hướng đó dùng nền vẽ bằ
 ## Hiện trạng (2026-11-20)
 
 - Đã xoá các file cũ không dùng (sen, lồng đèn, phượng, lụa bản cũ của hong-phuong và quan-ho; ảnh lạc trong `public/`). Khôi phục được từ lịch sử git nếu cần.
-- Còn `unverified`: `hoa-dao-xuan/backgrounds/landscape.webp`, `quan-ho-kinh-bac/decorations/sen-bong.webp`. Cả hai sẽ được thay theo phiếu HD và QH.
+- Còn `unverified`: `hoa-dao-xuan/backgrounds/landscape.webp`, `quan-ho-kinh-bac/backgrounds/landscape.webp` (bản thử). Cả hai sẽ được thay theo phiếu HD và QH.
 - `shared/` chưa có file nào. Chỉ dùng khi ChatGPT xác định một asset dùng chung được cho nhiều mẫu.

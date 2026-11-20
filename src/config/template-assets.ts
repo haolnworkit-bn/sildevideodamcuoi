@@ -32,7 +32,7 @@ export interface Motion {
 export type Anchor = "tl" | "tc" | "tr" | "cl" | "c" | "cr" | "bl" | "bc" | "br";
 
 export interface ImageLayer {
-  /** Đường dẫn dưới /assets/..., vd "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp" */
+  /** Đường dẫn dưới /assets/..., vd "/assets/hong-phuong/decorations/goc-tren-trai.webp" */
   src: string;
   anchor: Anchor;
   x: number;
@@ -90,28 +90,12 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
   },
 
   /** Bông sen màu nước đứng trong ao, đung đưa và "thở" nhẹ */
+  /** Quan Họ — bản thử màu nước: nền ngang là ảnh toàn cảnh tạm; khổ dọc vẫn dùng nền code của mẫu. */
   "quan-ho-kinh-bac": {
-    back: [
-      {
-        src: "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp",
-        anchor: "bc",
-        x: 0.205,
-        y: 0.95,
-        height: 0.3,
-        motion: { sway: 0.018, breathe: 0.012, cycles: 2 },
-        portrait: { x: 0.5, height: 0.2 },
-      },
-      {
-        src: "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp",
-        anchor: "bc",
-        x: 0.795,
-        y: 0.95,
-        height: 0.3,
-        flip: true,
-        motion: { sway: 0.018, breathe: 0.012, cycles: 2, phase: 2.1 },
-        portrait: { hide: true },
-      },
-    ],
+    background: {
+      landscape: "/assets/quan-ho-kinh-bac/backgrounds/landscape.webp",
+      zoom: 0.01,
+    },
   },
 
   /** Hồng Phượng 2026: nền riêng ngang/dọc và artwork màu nước. */

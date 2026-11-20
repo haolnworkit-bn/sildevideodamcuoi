@@ -120,3 +120,29 @@ Chỉ có **3 thư mục** cho mỗi mẫu: `backgrounds/`, `decorations/`, `par
 2. Gỡ phần vẽ bằng code đã được asset thay thế.
 3. Chụp mọi cảnh ở 16:9 và 9:16, có ảnh và không ảnh; thử xuất MP4. Gửi ảnh chụp để ChatGPT nghiệm thu mỹ thuật.
 4. Làm trên branch riêng và mở PR. Không tự merge.
+
+## 6. Quy tắc mỹ thuật — BẮT BUỘC tự kiểm trước khi gửi ảnh
+
+Rút ra từ ảnh tham khảo Quan Họ bị loại (2026-11-20). Mỗi lần gửi ảnh mẫu hoặc asset, ChatGPT **phải tự chấm theo 4 nhóm dưới đây và ghi kết quả ✔/✘ kèm ảnh**. Còn mục ✘ thì sửa trước rồi mới gửi.
+
+### A. Không "trông như AI"
+- Ưu tiên phong cách AI vẽ tự nhiên: **màu nước / thực vật học bán hiện thực**, chuyển màu mềm, mép loang. Tránh nét viền đen đều như vector, màu phẳng sạch bóng, mặt người kiểu hoạt hình.
+- Muốn dùng phong cách dân gian (Đông Hồ, khắc gỗ…) thì phải ra **đúng chất liệu thật**: nét dày mỏng không đều, mảng màu in lệch nét, màu đất. Nếu không làm được thì báo và đề xuất phong cách khác, đừng nộp bản "na ná".
+- Vật cùng loại không lặp lại y hệt (lá, hoa, tre phải khác nhau về dáng và độ nở). Không có chi tiết thừa vô nghĩa, không có chữ giả.
+
+### B. Đúng văn hoá Việt
+- Trang phục và đồ vật phải đúng. Ví dụ: liền anh đội khăn xếp, mặc áo the, cầm ô. Liền chị đội nón quai thao, chít khăn mỏ quạ. Nón lá, đèn lồng, mái đình làm theo kiểu Việt.
+- **Không dùng hoạ tiết kiểu Trung Quốc** (hồi văn góc, mây cuộn, mái cong kiểu chùa Tàu) trừ khi phiếu yêu cầu.
+- Hạn chế người. Nếu có thì để nhỏ, ở xa, mờ, như bóng dáng. Không vẽ mặt người cận cảnh.
+
+### C. Chừa chỗ cho chữ
+- Vùng chữ (xem §2) phải **thoáng**: không người, không công trình, không hoa đậm ở giữa. Cảnh xa (đình, người, cây) được phép nằm ở nửa dưới nếu **nhạt, mờ sương** (code phủ thêm quầng giấy sau chữ).
+- Trang trí dồn về góc và rìa. Cụm góc ngang ≤ 1/4 bề ngang, ≤ 1/3 chiều cao. Khổ dọc không để trang trí ở dải giữa.
+- Tự hỏi: *"đặt tên dài 2 dòng + ngày vào giữa ảnh thì có đè lên vật nào không?"* Có thì sửa.
+
+### D. Nền vẽ liền, chỉ tách vật cần chuyển động
+Quyết định 2026-11-20 (Quan Họ): nền vẽ liền một bức đẹp và đồng bộ hơn ghép từng vật.
+- **Nền được vẽ liền một bức** (giấy, cảnh, hoa, tre…). Ưu tiên dạng này để ánh sáng và màu ăn khớp.
+- **Nền ngang và nền dọc vẽ riêng**, cùng phong cách và cùng cảnh, bố cục riêng cho mỗi khổ. Không cắt từ nhau.
+- **Chỉ tách thành PNG riêng** những vật cần chuyển động hoặc cần nằm trước chữ: cánh hoa/lá rơi, cành đung đưa, đèn lồng, dải lụa… Mỗi ảnh một vật, nền trong suốt, gốc/cuống chạm mép phía điểm neo, xuất ở kích thước lớn nhất có thể. Không ghép nhiều vật vào một ảnh rồi cắt.
+- Vật đã có trong nền thì không tách lại (tránh trùng hình).
