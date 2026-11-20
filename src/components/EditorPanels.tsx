@@ -7,6 +7,7 @@ import { BODY_FONTS, FONT_LIB, TITLE_FONTS, ensureFontsLoaded } from "@/lib/font
 import { MUSIC_LIBRARY, buildLibraryTrack } from "@/lib/musicLibrary";
 import { MAX_PHOTOS, dateInfo, givenName, type ProjectData, type StyleOverrides } from "@/lib/project";
 import { checkMessageFit } from "@/lib/render/engine";
+import { scenesForCount, textSceneCount } from "@/lib/render/timeline";
 import { COLOR_TAGS, TEMPLATES, getTemplate } from "@/lib/render/templates";
 import type { ColorTag, Photo } from "@/lib/render/types";
 import TemplateThumb from "./TemplateThumb";
@@ -167,7 +168,7 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
           <textarea rows={4} value={data.message} maxLength={320} onChange={(e) => patch({ message: e.target.value })} />
           <small className="hint">{data.message.length}/320 ký tự</small>
         </label>
-        {data.scenes.message && messageFit?.overflow && (
+        {textSceneCount(data.scenes) === 3 && messageFit?.overflow && (
           <p className="warn">
             Lời cảm ơn quá dài với khung {data.aspect === "9:16" ? "dọc" : "ngang"}: chữ đã thu nhỏ hết mức mà vẫn không vừa,
             phần cuối sẽ bị rút gọn thành "…". Hãy bớt chữ hoặc bớt xuống dòng.
@@ -180,14 +181,26 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
 
       <section className="field-group">
         <h3>Các cảnh trong video</h3>
-        <label className="check">
-          <input type="checkbox" checked disabled />
-          <span>Giới thiệu · Tên & ngày lễ (luôn có)</span>
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={data.scenes.message} onChange={(e) => patch({ scenes: { ...data.scenes, message: e.target.checked } })} />
-          <span>Lời cảm ơn</span>
-        </label>
+        <div className="segmented">
+          {([1, 2, 3] as const).map((n) => (
+            <button
+              key={n}
+              className={textSceneCount(data.scenes) === n ? "on" : ""}
+              onClick={() => patch({ scenes: scenesForCount(data.scenes, n) })}
+            >
+              {n} cảnh
+            </button>
+          ))}
+        </div>
+        <small className="hint">
+          {
+            {
+              1: "Chỉ Tên & ngày lễ — chữ đứng yên, nền chuyển động (hợp màn LED chiếu suốt buổi).",
+              2: "Giới thiệu → Tên & ngày lễ.",
+              3: "Giới thiệu → Lời cảm ơn → Tên & ngày lễ.",
+            }[textSceneCount(data.scenes)]
+          }
+        </small>
         <label className="check">
           <input
             type="checkbox"

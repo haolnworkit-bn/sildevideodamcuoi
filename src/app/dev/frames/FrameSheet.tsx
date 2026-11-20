@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { sceneSnapTime } from "@/components/PreviewPlayer";
 import { FONT_LIB, ensureFontsLoaded } from "@/lib/fonts";
+import { scenesForCount } from "@/lib/render/timeline";
 import { createDefaultProject, type Aspect, type ProjectData } from "@/lib/project";
 import { renderFrame, stageOf, timelineOf } from "@/lib/render/engine";
 import { TEMPLATES } from "@/lib/render/templates";
@@ -68,6 +69,7 @@ export default function FrameSheet() {
       ...(long ? { groomName: "Nguyễn Hoàng Phương Nam", brideName: "Trần Ngọc Thanh Hương", nameStyle: "full" as const } : {}),
       // &msg=... : thử lời cảm ơn dài / nhiều dòng (dùng %0A để xuống dòng)
       ...(q.get("msg") ? { message: q.get("msg")! } : {}),
+      ...(q.get("scenes") ? { scenes: scenesForCount(base.scenes, Number(q.get("scenes")) as 1 | 2 | 3) } : {}),
       style: {
         ...(q.get("tf") ? { titleFont: q.get("tf")! } : {}),
         ...(q.get("hc") ? { headingColor: `#${q.get("hc")}` } : {}),
