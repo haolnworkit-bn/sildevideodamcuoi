@@ -46,7 +46,13 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 - Hạt: `makeLoopParticles(n)` sinh 1.5n; vẽ qua `particlesFor(rc, arr)` để theo tuỳ chọn mật độ (0/0.5/1/1.5).
 - Hoạ tiết nặng (hoa nhiều lớp) → `sprite(key,w,h,draw)` vẽ 1 lần. Ảnh trong khung → `drawPhoto` (Ken Burns lặp khớp).
 - Bố cục dọc: chừa ~350px đáy cho hoạ tiết góc của mẫu.
-- 11 mẫu: hoa-dao-xuan(frame, vòm), trau-cau(frame + dải lụa titleBacking), hy-su-do-vang(emblem huy chương 囍), sen-ngoc(faded, emblem hoa sen khi không ảnh),
+- **QUY TẮC ẢNH (người dùng yêu cầu): hình minh hoạ (hoa, lá, người, đồ vật, nền giấy, khung hoạ tiết) PHẢI dùng ảnh PNG/WebP, KHÔNG vẽ bằng code** (trông thô). Code chỉ để chữ, chuyển động, hạt đơn giản, đường/khung hình học, gradient, quầng sáng. Mẫu mới: KHÔNG viết hàm vẽ hoa/người bằng canvas.
+  Ảnh khai báo ở **`src/config/template-assets.ts`** (background ngang/dọc, lớp back/front có motion, ảnh rơi `falling`), file ảnh ở `public/assets/<id-mẫu>/`.
+  Engine vẽ qua `src/lib/render/layers.ts` (thứ tự: nền code → ảnh nền → back → cảnh chữ → front → falling → hạt của mẫu), nạp ảnh qua `src/lib/render/assets.ts`
+  (đăng ký khi import `templates/index.ts`; `ensureFontsLoaded()` đợi ảnh tải xong; thiếu file → bỏ qua lớp). Hướng dẫn cho người dùng: `public/assets/README.md`.
+  Nền ảnh cần RIÊNG bản ngang & dọc (thiếu hướng nào dùng nền code của mẫu). Ảnh nguồn: tự tạo bằng AI/ảnh có giấy phép; KHÔNG dùng asset của cinelove.
+- Mẫu đang dùng ảnh: hoa-dao-xuan (nền ngang), quan-ho-kinh-bac (sen), **hong-phuong** (mẫu ăn hỏi: nền hồng đào + lồng đèn góc trên trái + sen đôi góc dưới phải + chữ 囍 lớn, mờ, chìm ở GIỮA khung phía sau chữ [vẽ bằng font trong `hong-phuong.ts` qua hook mới `backdrop(rc)` của VideoTemplate — gọi SAU ảnh nền, TRƯỚC lớp back và các cảnh chữ, nên ảnh trang trí đè lên viền/chữ chìm chứ không bị đè; cùng hook này vẽ viền khung 2 nét mảnh hồng cách mép 3.5% cạnh ngắn; ở khổ ngang viền được làm mờ (destination-out trên canvas phụ) tại 2 cụm hoa đào đã nằm sẵn trong `nen.webp` để hoa nhìn như nằm TRÊN viền — toạ độ `hide(...)` gắn cứng theo ảnh nền, đổi ảnh nền thì phải chỉnh lại; cách đúng là tách cụm hoa thành PNG riêng nền trong suốt; không phải hình]; ảnh trong `public/assets/hong-phuong/`; khung dọc dùng chính nền ngang cắt giữa — nên bổ sung nền dọc riêng). `hong-phuong/long-den.webp` là bản đã TÁCH NỀN XÁM từ `quan-ho-kinh-bac/long_den.webp` của người dùng (bằng sharp: xoá màu 209,209,209 + khử viền). File thừa chưa dùng: `hong-phuong/phuong-hoang.webp`, `dai-lua-hong.webp` (vẫn dùng làm ornament "Lời cảm ơn"), `sen-hong.webp`, `sen-nu.webp`; `hoa_sen_hong_1.webp` trùng `hoa_sen_hong`. Các phần còn vẽ bằng code (liền anh/chị, tre, ao sen của quan-ho; toàn bộ mẫu khác) sẽ thay dần khi có ảnh.
+- 11 mẫu gốc: hoa-dao-xuan(frame, vòm), trau-cau(frame + dải lụa titleBacking), hy-su-do-vang(emblem huy chương 囍), sen-ngoc(faded, emblem hoa sen khi không ảnh),
   mau-don(frame tròn), tu-dang(frame vòm), cam-tu-cau(frame bo góc), thu-vang(frame polaroid), ngoc-trai(caps, emblem vòng ngọc trai/monogram),
   thanh-lich(caps, fullbleed), hoang-kim(caps, emblem monogram/khung vàng).
 
@@ -67,7 +73,8 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 
 ## Lỗi/bẫy đã gặp
 - `radialGlow` phải mờ về cùng màu alpha 0 (về `rgba(0,0,0,0)` sẽ ra quầng xám).
-- Grid trên mobile phải dùng `minmax(0,1fr)`, không thì tràn ngang.
+- Grid trên mobile phải dùng `minmax(0,1fr)`, không thì tràn ngang. **Cả trên desktop**: `.field-group`/`.stack`/`.row` đã đổi sang `minmax(0,1fr)` (nút `white-space:nowrap` từng làm cột rộng hơn panel → thẻ Nhạc nền bị cắt chữ). Nút trong panel có chữ dài dùng `.lib-track` (tên trên, mô tả dưới, tự xuống dòng), đừng dùng `.btn` (nowrap).
+- Dev server hay hỏng cache (404 `/dev/*`, 500 "__webpack_modules__ is not a function", treo "Compiling /editor"): tắt đúng tiến trình đang nghe cổng (PowerShell `Get-NetTCPConnection -LocalPort`), xoá `.next`, chạy lại. Chụp editor theo thẻ: script tạm `tabshot.mjs` (CDP, bấm nút theo chữ) ở scratchpad.
 - Sau `npm run build`, dev server có thể trả 404 cho `/dev/*` → xoá `.next` rồi chạy lại `npm run dev`.
 - Chrome headless có độ rộng cửa sổ tối thiểu → test mobile phải dùng `Emulation.setDeviceMetricsOverride` (scripts/screenshot.mjs).
 - `next/font` yêu cầu option là literal (không truyền biến); subset `vietnamese` phải có trong typings (tsc báo nếu sai).
@@ -85,8 +92,17 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 ```
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
+## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-19 (mẫu hong-phuong): thêm mẫu `hong-phuong` (tổng 16 mẫu) từ ảnh người dùng sưu tầm; code mẫu chỉ có màu/gradient dự phòng/khung vòm/hạt lấp lánh, mọi hình minh hoạ là ảnh qua `template-assets.ts`. tsc sạch; đã chụp 16:9 & 9:16 (có/không ảnh). Còn: ở cảnh intro CÓ ẢNH khổ ngang, dòng tên dài sát nhẹ vào phượng bên phải; khổ dọc cảnh intro có ảnh chữ đè lên phượng/sen đáy. Chưa thử xuất MP4. Dev server đang ở cổng 3124.
+- 2026-11-19 (hệ thống ảnh): thêm hệ thống ảnh trang trí theo mẫu (xem "QUY TẮC ẢNH"). Đã thử với hoa-dao-xuan (nền ngang `background.webp`) và quan-ho-kinh-bac (sen `sen-bong.webp`, ảnh sen do người dùng tự lấy từ nguồn free — ảnh trông giống ảnh sen trong mẫu cinelove, nên nhắc người dùng xác nhận giấy phép trước khi công bố). tsc sạch; đã chụp cả 16:9 & 9:16. Dev server: cổng 3123 bị treo → đang chạy ở 3124. Chưa thử xuất MP4 với ảnh, chưa commit.
+- 2026-11-19 (cuối phiên): thêm mẫu `quan-ho-kinh-bac` (tổng 15 mẫu): giấy điệp, khung Đông Hồ, liền anh (khăn xếp, áo the, ô) + liền chị (nón quai thao, áo mớ ba mớ bảy) vẽ bằng canvas đứng hai bên, ao sen (sóng lan, bông sen thở nhịp, lá bồng bềnh), vệt sáng quét giấy điệp, cánh sen rơi; nhạc "Ngũ cung" trong thư viện. Còn lỗi nhỏ: ở cảnh intro CÓ ẢNH, chữ tên đè nhẹ lên liền chị (16:9) / hai nhân vật (9:16). Chưa thử xuất MP4 mẫu này. Mẫu cinelove KHÔNG được xem (trang SPA), chuyển động tự thiết kế.
+- 2026-11-19 (phiên sau): thêm 3 mẫu (tet-doan-vien, dua-xanh, toi-gian → tổng 14), `src/lib/musicLibrary.ts` (3 bài nhạc tự tổng hợp bằng OfflineAudioContext → WAV, chọn ở thẻ Nhạc nền, không vướng bản quyền), sửa cắt chữ ô "Tên ở cảnh lớn", CSS mobile. tsc sạch; đã chụp 3 mẫu mới 16:9 + 9:16 đều ổn. Chưa nghe thử nhạc, chưa thử xuất MP4 mẫu mới.
+- 2026-11-19: xong 4 tính năng (mẫu theo màu rạp, font+màu, nhiều ảnh + cảnh Khoảnh khắc, bản dọc 9:16) + nhạc nền + editor dạng thanh công cụ dọc & dải phân cảnh. Build sạch, chưa có lỗi tồn đọng.
+- Repo vừa được `git init`; chưa commit lần nào (chỉ commit khi người dùng yêu cầu).
+- Quy ước làm việc: hết mỗi khối việc lớn → cập nhật file này và nhắc người dùng chuyển chat mới nếu phiên đã dài.
+
 ## Việc tiếp theo (chưa làm)
 - Thanh toán thật (PayOS/VNPay/MoMo) + webhook; tài khoản + DB (Neon/Postgres) + object storage cho ảnh/nhạc.
 - Render bản sạch phía server (headless Chrome chạy `renderFrame`) để chống lách watermark.
 - Link chiếu online `/v/<id>` cho Smart TV; thư viện nhạc có bản quyền; thêm mẫu theo mùa/vùng miền.
-- Nhỏ: option "Tên gọi (Quân & Hà)" trong select bị cắt chữ ở panel hẹp.
+- Mobile: đã thêm CSS (input 16px, nút ≥40px, row wrap) nhưng CHƯA chụp lại editor ở viewport điện thoại; cần thử máy thật.

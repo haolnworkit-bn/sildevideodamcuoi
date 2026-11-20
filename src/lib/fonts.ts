@@ -18,6 +18,7 @@ import {
   Quicksand,
 } from "next/font/google";
 import type { FontLibrary } from "./render/types";
+import { ensureAssetsLoaded } from "./render/assets";
 
 // Font mặc định (tải sẵn)
 const greatVibes = Great_Vibes({ weight: "400", subsets: ["latin", "vietnamese"], variable: "--font-script" });
@@ -153,5 +154,5 @@ export function ensureFontsLoaded(extraKeys: Array<string | undefined> = []): Pr
     const fam = k ? byKey[k] : undefined;
     if (fam) jobs.push(loadFamily(fam, ["400", "500", "600", "italic 500"]));
   }
-  return Promise.all(jobs).then(() => undefined);
+  return Promise.all([...jobs, ensureAssetsLoaded()]).then(() => undefined);
 }

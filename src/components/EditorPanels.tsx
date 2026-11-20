@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FEATURES } from "@/config/features";
 import { EVENT_LIST, EVENT_TYPES, type EventTypeId } from "@/lib/events";
 import { BODY_FONTS, TITLE_FONTS } from "@/lib/fonts";
+import { MUSIC_LIBRARY, buildLibraryTrack } from "@/lib/musicLibrary";
 import { MAX_PHOTOS, dateInfo, givenName, type ProjectData, type StyleOverrides } from "@/lib/project";
 import { COLOR_TAGS, TEMPLATES } from "@/lib/render/templates";
 import type { ColorTag, Photo } from "@/lib/render/types";
@@ -101,7 +102,7 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
             <span>Tên ở cảnh lớn</span>
             <select value={data.nameStyle} onChange={(e) => patch({ nameStyle: e.target.value as ProjectData["nameStyle"] })}>
               <option value="short">
-                Tên gọi ({givenName(data.groomName)} & {givenName(data.brideName)})
+                {givenName(data.groomName)} & {givenName(data.brideName)}
               </option>
               <option value="full">Họ tên đầy đủ</option>
             </select>
@@ -411,6 +412,7 @@ export function MusicPanel({
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [building, setBuilding] = useState<string | null>(null);
   useEffect(() => {
     if (!musicUrl) return;
     const a = new Audio(musicUrl);
@@ -462,10 +464,34 @@ export function MusicPanel({
           </label>
         </>
       ) : (
-        <label className="upload">
-          <input type="file" accept="audio/*" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
-          Chọn file nhạc (MP3, M4A, WAV…)
-        </label>
+        <>
+          <label className="upload">
+            <input type="file" accept="audio/*" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+            Chọn file nhạc (MP3, M4A, WAV…)
+          </label>
+          <h3 style={{ marginTop: 16 }}>Hoặc chọn nhạc có sẵn</h3>
+          <p className="hint">Nhạc do ứng dụng tự tạo, dùng tự do, không lo bản quyền.</p>
+          <div className="stack">
+            {MUSIC_LIBRARY.map((tr) => (
+              <button
+                key={tr.id}
+                className="lib-track"
+                disabled={!!building}
+                onClick={async () => {
+                  setBuilding(tr.id);
+                  try {
+                    onUpload(await buildLibraryTrack(tr));
+                  } finally {
+                    setBuilding(null);
+                  }
+                }}
+              >
+                <strong>{building === tr.id ? "Đang tạo…" : `♪ ${tr.name}`}</strong>
+                <small>{tr.description}</small>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

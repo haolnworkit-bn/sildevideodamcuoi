@@ -1,7 +1,13 @@
+import { preloadTemplateAssets } from "../layers";
 import type { ColorTag, VideoTemplate } from "../types";
 import { camTuCau } from "./cam-tu-cau";
+import { duaXanh } from "./dua-xanh";
+import { quanHo } from "./quan-ho";
+import { tetDoanVien } from "./tet-doan-vien";
+import { toiGian } from "./toi-gian";
 import { hoaDao } from "./hoa-dao";
 import { hoangKim } from "./hoang-kim";
+import { hongPhuong } from "./hong-phuong";
 import { hySu } from "./hy-su";
 import { mauDon } from "./mau-don";
 import { ngocTrai } from "./ngoc-trai";
@@ -24,7 +30,15 @@ export const TEMPLATES: VideoTemplate[] = [
   ngocTrai,
   thanhLich,
   hoangKim,
+  tetDoanVien,
+  duaXanh,
+  toiGian,
+  quanHo,
+  hongPhuong,
 ];
+
+// Bắt đầu tải ảnh trang trí của mọi mẫu (chỉ chạy ở trình duyệt; khai báo ở src/config/template-assets.ts)
+for (const t of TEMPLATES) preloadTemplateAssets(t.id);
 
 export function getTemplate(id: string | null | undefined): VideoTemplate {
   return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];

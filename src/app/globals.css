@@ -311,6 +311,7 @@ a {
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* không để nội dung nowrap làm cột rộng hơn khung */
   gap: 10px;
 }
 .field-group h3 {
@@ -349,7 +350,7 @@ a {
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr 120px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 10px;
 }
 .check {
@@ -513,8 +514,16 @@ a {
   justify-self: center;
 }
 
+/* Ô ngày/giờ gốc của trình duyệt có bề rộng tối thiểu lớn: cho phép co lại, bớt đệm */
+.row input[type="date"],
+.row input[type="time"] {
+  min-width: 0;
+  width: 100%;
+  padding-left: 8px;
+  padding-right: 6px;
+}
 .row.even {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 /* ---------- Nút chọn kiểu phân đoạn ---------- */
@@ -888,5 +897,68 @@ kbd {
   .topbar-actions .btn {
     padding: 8px 12px;
     font-size: 14px;
+  }
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+/* Nút chọn nhạc có sẵn: tên bài trên, mô tả dưới, tự xuống dòng */
+.lib-track {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.lib-track:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.lib-track:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.lib-track strong {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.lib-track small {
+  color: var(--muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+/* Điện thoại: chống iOS tự zoom khi chạm ô nhập, nút bấm đủ lớn, không tràn ngang */
+@media (max-width: 600px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .btn,
+  .rail button {
+    min-height: 40px;
+  }
+  .row {
+    flex-wrap: wrap;
+  }
+  .row > .field {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  .field select {
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+  body {
+    overflow-x: hidden;
   }
 }

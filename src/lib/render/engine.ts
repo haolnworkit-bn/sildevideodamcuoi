@@ -1,4 +1,5 @@
 import type { ProjectData } from "../project";
+import { drawAssetBackground, drawAssetFalling, drawAssetLayers } from "./layers";
 import { drawWatermark, runScenes } from "./helpers";
 import { albumScene, introScene, messageScene, namesScene } from "./scenes";
 import { resolveFonts, resolveTheme } from "./theme";
@@ -58,12 +59,33 @@ export function renderFrame(ctx: CanvasRenderingContext2D, t: number, input: Fra
   tpl.background(rc);
   ctx.restore();
 
+  // Ảnh trang trí khai báo trong src/config/template-assets.ts
+  ctx.save();
+  drawAssetBackground(rc, tpl.id);
+  ctx.restore();
+
+  // Viền khung / chữ chìm của mẫu: nằm trên ảnh nền nhưng DƯỚI các ảnh trang trí (không đè lên vật thể)
+  if (tpl.backdrop) {
+    ctx.save();
+    tpl.backdrop(rc);
+    ctx.restore();
+  }
+
+  ctx.save();
+  drawAssetLayers(rc, tpl.id, "back");
+  ctx.restore();
+
   runScenes(rc, {
     intro: (lt) => introScene(rc, lt, tpl),
     message: (lt) => messageScene(rc, lt, tpl),
     album: (lt, s) => albumScene(rc, lt, s, tpl),
     names: (lt) => namesScene(rc, lt, tpl),
   });
+
+  ctx.save();
+  drawAssetLayers(rc, tpl.id, "front");
+  drawAssetFalling(rc, tpl.id);
+  ctx.restore();
 
   if (tpl.foreground) {
     ctx.save();

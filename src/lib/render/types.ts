@@ -129,6 +129,9 @@ export interface VideoTemplate {
   background: (rc: RenderContext) => void;
   /** Lớp hạt/hiệu ứng phía trước chữ */
   foreground?: (rc: RenderContext) => void;
+  /** Lớp nằm TRÊN ảnh nền nhưng DƯỚI ảnh trang trí đã khai báo (layers back/front) và dưới chữ/ảnh cưới
+   *  (vd viền khung, chữ 囍 chìm ở giữa) — nhờ vậy viền không đè lên vật thể trang trí */
+  backdrop?: (rc: RenderContext) => void;
   /** Hoạ tiết nhỏ phía trên tiêu đề "Lời cảm ơn" */
   ornament?: (rc: RenderContext, cx: number, cy: number) => void;
   /** Khung ảnh theo phong cách mẫu */
