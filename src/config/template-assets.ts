@@ -112,39 +112,25 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
     ],
   },
 
-  /**
-   * Hồng Phượng Ăn Hỏi: nền hồng đào + lồng đèn góc trên trái + sen góc dưới phải (+ chữ hỷ ở giữa đáy, vẽ trong hong-phuong.ts).
-   * Nền: chỉ có bản ngang; khung dọc dùng chính ảnh đó cắt giữa (giấy hồng màu nước) — nên tạo thêm nền dọc riêng.
-   */
+  /** Hồng Phượng 2026: nền riêng ngang/dọc và artwork màu nước. */
   "hong-phuong": {
-    // dải lụa dùng làm hoạ tiết phía trên "Lời cảm ơn" (vẽ trong hong-phuong.ts → ornament)
-    preload: ["/assets/hong-phuong/decorations/dai-lua-hong.webp"],
+    preload: ["/assets/hong-phuong/decorations/silk-ribbon.webp"],
     background: {
       landscape: "/assets/hong-phuong/backgrounds/landscape.webp",
-      portrait: "/assets/hong-phuong/backgrounds/landscape.webp",
-      zoom: 0.02,
+      portrait: "/assets/hong-phuong/backgrounds/portrait.webp",
+      zoom: 0.012,
     },
     back: [
-      // Lồng đèn treo góc trên trái, đung đưa quanh điểm treo (giữa mép trên ảnh)
+      // Phượng hoàng mờ ở rìa phải, không đè lên chữ; ẩn trên khung dọc.
       {
-        src: "/assets/hong-phuong/decorations/long-den.webp",
-        anchor: "tc",
-        x: 0.115,
-        y: 0,
-        height: 0.46,
-        motion: { sway: 0.035, cycles: 2 },
-        portrait: { x: 0.2, height: 0.3 },
+        src: "/assets/hong-phuong/decorations/phoenix-pink.webp",
+        anchor: "tr", x: 0.98, y: 0.10, height: 0.3, alpha: 0.20,
+        motion: { sway: 0.008, breathe: 0.005, cycles: 2 },
+        portrait: { hide: true },
       },
-      // Sen đôi góc dưới phải
-      {
-        src: "/assets/hong-phuong/decorations/sen-doi.webp",
-        anchor: "br",
-        x: 0.985,
-        y: 1,
-        height: 0.38,
-        motion: { sway: 0.012, breathe: 0.01, cycles: 2, phase: 1.2 },
-        portrait: { x: 0.97, height: 0.24 },
-      },
+    ],
+    falling: [
+      { src: "/assets/hong-phuong/particles/petal-pink-01.webp", count: 8, size: [0.014, 0.027], drift: 36, loops: 1, seed: 73 },
     ],
   },
 };

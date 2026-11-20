@@ -71,7 +71,7 @@ export const hongPhuong: VideoTemplate = {
     rr(12, 10);
     g.stroke();
     if (!rc.portrait && getAsset("/assets/hong-phuong/backgrounds/landscape.webp")) {
-      // vị trí hai cụm hoa đào trong ảnh nền ngang (toạ độ theo tỉ lệ khung): dưới trái và trên phải
+      // che nét viền ở bốn góc nhiều hoa của nền mới (tọa độ tỉ lệ khung)
       const hide = (cx: number, cy: number, rx: number, ry: number) => {
         g.save();
         g.globalCompositeOperation = "destination-out";
@@ -87,10 +87,10 @@ export const hongPhuong: VideoTemplate = {
         g.fill();
         g.restore();
       };
-      hide(0.05, 0.62, 0.09, 0.27);
-      hide(0.13, 0.93, 0.22, 0.11);
-      hide(0.88, 0.04, 0.17, 0.09);
-      hide(0.975, 0.15, 0.06, 0.2);
+      hide(0.08, 0.07, 0.13, 0.10);
+      hide(0.12, 0.93, 0.18, 0.13);
+      hide(0.89, 0.06, 0.18, 0.10);
+      hide(0.95, 0.90, 0.13, 0.14);
     }
     ctx.drawImage(scratchCanvas("hp-frame", W, H), 0, 0, W, H);
 
@@ -121,7 +121,7 @@ export const hongPhuong: VideoTemplate = {
 
   // Phân cách phía trên "Lời cảm ơn": dải lụa hồng (ảnh)
   ornament(rc, cx, cy) {
-    const img = getAsset("/assets/hong-phuong/decorations/dai-lua-hong.webp");
+    const img = getAsset("/assets/hong-phuong/decorations/silk-ribbon.webp");
     const { ctx } = rc;
     if (img) {
       const w = 300;
