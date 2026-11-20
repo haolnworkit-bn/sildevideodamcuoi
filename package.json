@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:lunar": "node --experimental-strip-types scripts/check-lunar.ts",
-    "check:assets": "node scripts/check-assets.mjs"
+    "check:assets": "node scripts/check-assets.mjs",
+    "test:assets": "node --test scripts/check-assets.test.mjs"
   },
   "dependencies": {
     "mp4-muxer": "^5.2.2",
