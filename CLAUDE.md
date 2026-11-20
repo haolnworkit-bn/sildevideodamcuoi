@@ -77,6 +77,7 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
 ## Lỗi/bẫy đã gặp
 - `radialGlow` phải mờ về cùng màu alpha 0 (về `rgba(0,0,0,0)` sẽ ra quầng xám).
 - Grid trên mobile phải dùng `minmax(0,1fr)`, không thì tràn ngang. **Cả trên desktop**: `.field-group`/`.stack`/`.row` đã đổi sang `minmax(0,1fr)` (nút `white-space:nowrap` từng làm cột rộng hơn panel → thẻ Nhạc nền bị cắt chữ). Nút trong panel có chữ dài dùng `.lib-track` (tên trên, mô tả dưới, tự xuống dòng), đừng dùng `.btn` (nowrap).
+- **KHÔNG chạy 2 dev server cùng lúc** (chúng dùng chung `.next` → hỏng cache, gây 404/500 cho cả server của người dùng). Trước khi bật server, kiểm tra cổng 8080: nếu người dùng đang chạy `npm run dev` thì DÙNG LUÔN server đó (http://localhost:8080), không xoá `.next`, không `npm run build` khi nó đang chạy.
 - Dev server hay hỏng cache (404 `/dev/*`, 500 "__webpack_modules__ is not a function", treo "Compiling /editor"): tắt đúng tiến trình đang nghe cổng (PowerShell `Get-NetTCPConnection -LocalPort`), xoá `.next`, chạy lại. Chụp editor theo thẻ: script tạm `tabshot.mjs` (CDP, bấm nút theo chữ) ở scratchpad.
 - Sau `npm run build`, dev server có thể trả 404 cho `/dev/*` → xoá `.next` rồi chạy lại `npm run dev`.
 - Chrome headless có độ rộng cửa sổ tối thiểu → test mobile phải dùng `Emulation.setDeviceMetricsOverride` (scripts/screenshot.mjs).
