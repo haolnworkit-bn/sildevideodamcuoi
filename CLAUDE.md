@@ -109,6 +109,11 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-20 (Quan Họ màu nước, nhánh `design/quan-ho-watercolor`, PR): BỎ hướng Đông Hồ (ảnh AI trông giả, sai văn hoá) → màu nước thực vật học.
+  Nền ngang = ảnh toàn cảnh vẽ liền của ChatGPT (`backgrounds/landscape.webp`, 1672×941 upscale). Theme hồng sen/mực ô-liu/xanh lá sen; hook `backdrop`
+  phủ quầng giấy kem sau khối chữ (chỉ khổ ngang); khung ảnh passe-partout; ornament nón quai thao code → đường kẻ + hạt thoi. Khổ dọc vẫn nền Đông Hồ code (tạm).
+  `sen-bong` đã xoá. Quy cách §6 mới (tự chấm A–D trước khi gửi ảnh; D = nền vẽ liền được phép, chỉ tách vật cần chuyển động).
+  Chờ ChatGPT: nền dọc vẽ liền + 3 cánh sen rơi.
 - 2026-11-20 (Hồng Phượng B3, nhánh `design/hong-phuong-b3`, PR): quy trình ChatGPT chạy thật lần đầu. Hồ sơ đã duyệt: `docs/templates/hong-phuong.md`
   (có bảng đặt asset). Nền ngang mới là giấy sạch (đã BỎ mẹo `hide(...)` che viền); 4 cụm góc, đèn lồng (chỉ dọc), lụa đáy (front), 2 cánh rơi
   khai báo trong `template-assets.ts`; thêm `background.portraitZoom`. ChatGPT nộp PNG → Claude đổi WebP (sharp, q90). Ảnh thô để ở `_inbox/<id>/` (gitignore).

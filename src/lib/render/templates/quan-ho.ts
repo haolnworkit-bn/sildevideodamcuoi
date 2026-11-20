@@ -1,4 +1,3 @@
-import { getAsset } from "../assets";
 import { TAU, drawPhoto, drawSprite, makeLoopParticles, mulberry32, particleAt, particlesFor, radialGlow, sprite } from "../helpers";
 import type { VideoTemplate } from "../types";
 
@@ -8,6 +7,11 @@ const CHAM = "#1f3a5f";
 const NGHE = "#e0a526";
 const THAN = "#2a2320";
 const DIEP = "#f7efd9";
+
+/** Bảng màu bản màu nước (nền ảnh khổ ngang, thử 2026-11-20): hồng sen, mực ô-liu, xanh lá sen */
+const SEN = "#a8344e";
+const MUC = "#4b4636";
+const LA = "#5f7d4f";
 
 const leaves = makeLoopParticles(30, 88, { minSize: 14, maxSize: 26, drift: 120 });
 
@@ -401,9 +405,6 @@ function senLa(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number) 
   }
 }
 
-/** Khi đã có ảnh sen thật (khai báo ở src/config/template-assets.ts) thì không vẽ sen bằng code nữa */
-const SEN_URL = "/assets/quan-ho-kinh-bac/decorations/sen-bong.webp";
-
 /** Ao sen ở chân khung: nước, sóng lan, lá và bông sen bồng bềnh */
 function aoSen(ctx: CanvasRenderingContext2D, W: number, H: number, u: number) {
   const top = H - 44 - Math.max(150, H * 0.15);
@@ -444,14 +445,11 @@ function aoSen(ctx: CanvasRenderingContext2D, W: number, H: number, u: number) {
     const y = top + (H - 44 - top) * fy + bob(i);
     senLa(ctx, x, y, (70 + (i % 3) * 22) * s);
   });
-  const hasPhotoLotus = !!getAsset(SEN_URL);
-  if (!hasPhotoLotus) {
-    [1, 3, 5].forEach((i, n) => {
-      const [fx, fy] = items[i];
-      const breath = 0.5 + 0.5 * Math.sin(TAU * u * 2 + n * 2);
-      senBong(ctx, W * fx + 14 * s, top + (H - 44 - top) * fy - 10 * s + bob(i), (46 + n * 6) * s, breath);
-    });
-  }
+  [1, 3, 5].forEach((i, n) => {
+    const [fx, fy] = items[i];
+    const breath = 0.5 + 0.5 * Math.sin(TAU * u * 2 + n * 2);
+    senBong(ctx, W * fx + 14 * s, top + (H - 44 - top) * fy - 10 * s + bob(i), (46 + n * 6) * s, breath);
+  });
   ctx.restore();
 }
 
@@ -478,7 +476,7 @@ export const quanHo: VideoTemplate = {
   tier: "free",
   swatch: ["#f7efd9", "#b3261e", "#1f3a5f"],
   colors: ["do", "vang"],
-  theme: { heading: SON, names: SON, body: THAN, accent: CHAM, line: "rgba(31,58,95,0.55)" },
+  theme: { heading: SEN, names: SEN, body: MUC, accent: LA, line: "rgba(95,125,79,0.5)" },
   bodyFont: "serif",
   capsFont: "display",
   intro: { title: "script", namesLine: "italic", photoMode: "frame" },
@@ -511,6 +509,17 @@ export const quanHo: VideoTemplate = {
     ctx.fillRect(W / 2 - 100, 54, 200, 6);
   },
 
+  /** Khổ ngang dùng ảnh nền màu nước có cảnh ao/đình ở nửa dưới → phủ quầng giấy kem mờ sau khối chữ cho dễ đọc */
+  backdrop(rc) {
+    if (rc.portrait) return;
+    const { ctx, W, H } = rc;
+    ctx.save();
+    ctx.translate(W * 0.5, H * 0.58);
+    ctx.scale(1, 0.62);
+    radialGlow(ctx, 0, 0, W * 0.4, "rgba(250,243,226,0.72)");
+    ctx.restore();
+  },
+
   foreground(rc) {
     const { ctx, W, H, t, D } = rc;
     const u = t / D;
@@ -538,7 +547,21 @@ export const quanHo: VideoTemplate = {
   },
 
   ornament(rc, cx, cy) {
-    nonQuaiThao(rc.ctx, cx, cy - 6, 0.85);
+    const { ctx } = rc;
+    ctx.save();
+    ctx.strokeStyle = "rgba(95,125,79,0.65)";
+    ctx.lineWidth = 1.5;
+    for (const d of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + d * 18, cy);
+      ctx.lineTo(cx + d * 130, cy);
+      ctx.stroke();
+    }
+    ctx.fillStyle = SEN;
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-6, -6, 12, 12);
+    ctx.restore();
   },
 
   photoFrame(ctx, photo, x, y, w, h, rc) {
@@ -546,7 +569,7 @@ export const quanHo: VideoTemplate = {
     ctx.shadowColor = "rgba(42,35,32,0.35)";
     ctx.shadowBlur = 34;
     ctx.shadowOffsetY = 12;
-    ctx.fillStyle = DIEP;
+    ctx.fillStyle = "#fbf6ea";
     ctx.fillRect(x - 26, y - 26, w + 52, h + 52);
     ctx.restore();
     ctx.save();
@@ -555,6 +578,10 @@ export const quanHo: VideoTemplate = {
     ctx.clip();
     drawPhoto(ctx, photo, x, y, w, h, rc);
     ctx.restore();
-    frame(ctx, x - 26, y - 26, w + 52, h + 52);
+    ctx.save();
+    ctx.strokeStyle = "rgba(95,125,79,0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x - 12, y - 12, w + 24, h + 24);
+    ctx.restore();
   },
 };
