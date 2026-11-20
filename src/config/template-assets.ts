@@ -71,6 +71,8 @@ export interface TemplateAssets {
     portrait?: string; // 9:16, từ 1080×1920
     /** Phóng to nhẹ theo vòng lặp (vd 0.03). Mặc định 0 */
     zoom?: number;
+    /** Ghi đè `zoom` riêng cho khung dọc (vd 0 = nền dọc đứng yên) */
+    portraitZoom?: number;
   };
   /** Lớp ở PHÍA SAU chữ/ảnh cưới */
   back?: ImageLayer[];
@@ -118,19 +120,68 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
     background: {
       landscape: "/assets/hong-phuong/backgrounds/landscape.webp",
       portrait: "/assets/hong-phuong/backgrounds/portrait.webp",
-      zoom: 0.012,
+      zoom: 0.01,
+      portraitZoom: 0, // HP-02 đứng yên (hồ sơ B1.1)
     },
+    // Vị trí/cỡ theo bảng đặt asset B1.1 (docs hồ sơ hong-phuong). Cỡ = tỉ lệ khung: ngang H=1080, dọc H=1920.
     back: [
-      // Phượng hoàng mờ ở rìa phải, không đè lên chữ; ẩn trên khung dọc.
+      // HP-03 cành đào trên trái — 400×280 ngang, 260×182 dọc
       {
-        src: "/assets/hong-phuong/decorations/phoenix-pink.webp",
-        anchor: "tr", x: 0.98, y: 0.10, height: 0.3, alpha: 0.20,
-        motion: { sway: 0.008, breathe: 0.005, cycles: 2 },
-        portrait: { hide: true },
+        src: "/assets/hong-phuong/decorations/goc-tren-trai.webp",
+        anchor: "tl", x: 0, y: 0, height: 280 / 1080,
+        motion: { sway: 0.008, cycles: 2 },
+        portrait: { height: 182 / 1920 },
+      },
+      // HP-06 cành đào trên phải — 320×180 ngang, 204×115 dọc; lệch pha với HP-03
+      {
+        src: "/assets/hong-phuong/decorations/canh-tren-phai.webp",
+        anchor: "tr", x: 1, y: 0, height: 180 / 1080,
+        motion: { sway: 0.008, cycles: 2, phase: 2.2 },
+        portrait: { height: 115 / 1920 },
+      },
+      // HP-04 mẫu đơn + nón lá dưới trái (ngang) — 410×280
+      {
+        src: "/assets/hong-phuong/decorations/goc-duoi-trai.webp",
+        anchor: "bl", x: 0, y: 1, height: 280 / 1080, only: "landscape",
+        motion: { breathe: 0.005, cycles: 2 },
+      },
+      // HP-05 mẫu đơn + đào dưới phải (ngang) — 410×290
+      {
+        src: "/assets/hong-phuong/decorations/goc-duoi-phai.webp",
+        anchor: "br", x: 1, y: 1, height: 290 / 1080, only: "landscape",
+        motion: { breathe: 0.005, cycles: 2, phase: 3.1 },
+      },
+      // HP-04-P / HP-05-P cụm đáy khổ dọc — ~482×380 / ~477×390 (phóng to so với B1.1 để lấp dải đáy; phần cao nằm sát mép ngoài)
+      {
+        src: "/assets/hong-phuong/decorations/goc-duoi-trai-portrait.webp",
+        anchor: "bl", x: 0, y: 1, height: 380 / 1920, only: "portrait",
+        motion: { breathe: 0.004, cycles: 2 },
+      },
+      {
+        src: "/assets/hong-phuong/decorations/goc-duoi-phai-portrait.webp",
+        anchor: "br", x: 1, y: 1, height: 390 / 1920, only: "portrait",
+        motion: { breathe: 0.004, cycles: 2, phase: 3.1 },
+      },
+      // HP-07 đèn lồng — chỉ khổ dọc, treo tại x=970, cao 230
+      {
+        src: "/assets/hong-phuong/decorations/den-long.webp",
+        anchor: "tc", x: 970 / 1080, y: 0, height: 230 / 1920, only: "portrait",
+        motion: { sway: 0.012, cycles: 2, phase: 1.3 },
+      },
+    ],
+    front: [
+      // HP-08 dải lụa đáy — 980×80 ngang (y 1000–1080), 940×77 dọc
+      {
+        src: "/assets/hong-phuong/decorations/dai-lua-day.webp",
+        anchor: "bc", x: 0.5, y: 1, width: 980 / 1920,
+        motion: { driftX: 0.003, cycles: 1 },
+        portrait: { width: 940 / 1080 },
       },
     ],
     falling: [
-      { src: "/assets/hong-phuong/particles/petal-pink-01.webp", count: 8, size: [0.014, 0.027], drift: 36, loops: 1, seed: 73 },
+      { src: "/assets/hong-phuong/particles/petal-pink-01.webp", count: 5, size: [0.015, 0.03], drift: 36, loops: 1, seed: 73 },
+      { src: "/assets/hong-phuong/particles/canh-hong-02.webp", count: 4, size: [0.015, 0.03], drift: 40, loops: 1, seed: 91 },
+      { src: "/assets/hong-phuong/particles/canh-hong-03.webp", count: 3, size: [0.018, 0.034], drift: 32, loops: 1, seed: 117 },
     ],
   },
 };

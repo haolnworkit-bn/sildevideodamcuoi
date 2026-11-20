@@ -71,7 +71,7 @@ Hai khổ: **ngang 16:9 = 1920×1080** và **dọc 9:16 = 1080×1920**.
 |---|---|---|---|---|
 | Nền ngang | `backgrounds/landscape.webp` | WebP, không alpha | đúng 1920×1080 | ≤ 400 KB |
 | Nền dọc | `backgrounds/portrait.webp` | WebP, không alpha | đúng 1080×1920 | ≤ 400 KB |
-| Trang trí (back/front) | `decorations/` | WebP có alpha (hoặc PNG) | cạnh dài ≈ 2× cỡ hiển thị lớn nhất, ≤ 1600px | ≤ 300 KB |
+| Trang trí (back/front) | `decorations/` | WebP có alpha | cạnh dài ≈ 2× cỡ hiển thị lớn nhất, ≤ 1600px | ≤ 300 KB |
 | Hoạ tiết phân cách | `decorations/ornament-<tên>.webp` | WebP alpha | rộng ≈ 2× cỡ hiển thị | ≤ 150 KB |
 | Ảnh rơi | `particles/` | WebP alpha | 128–256 px, vật ở chính giữa | ≤ 20 KB |
 
