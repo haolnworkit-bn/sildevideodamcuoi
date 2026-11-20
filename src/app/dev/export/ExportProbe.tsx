@@ -41,12 +41,16 @@ export default function ExportProbe() {
     const data = { ...createDefaultProject(tpl.id, "dam-ngo"), aspect: (q.get("aspect") as Aspect) || "16:9" };
     const photos = Array.from({ length: Number(q.get("photos") || 0) }, (_, i) => fakePhoto(i * 70));
     const t0 = performance.now();
+    const heap = () => (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? null;
+    const heapStart = heap();
     (async () => {
       await ensureFontsLoaded();
       const audio = q.get("audio") === "1" ? await synthAudio() : null;
       const forceWebm = q.get("webm") === "1";
       const { blob, ext, audioDropped } = await exportVideo({ template: tpl, data, photos, fonts: FONT_LIB, watermark: null, loops, audio, forceWebm });
       const ms = Math.round(performance.now() - t0);
+      const heapEnd = heap();
+      const durationEstimate = 20 * loops;
       const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
       const sig = String.fromCharCode(...head.slice(4, 8));
       const u = URL.createObjectURL(blob);
@@ -75,7 +79,9 @@ export default function ExportProbe() {
       await new Promise((r) => setTimeout(r, 1500));
       const audioBytes = (v as HTMLVideoElement & { webkitAudioDecodedByteCount?: number }).webkitAudioDecodedByteCount ?? -1;
       v.pause();
-      setLog(`RESULT ok ext=${ext} bytes=${blob.size} box=${sig} ms=${ms} ${meta} audioDropped=${audioDropped} audioDecodedBytes=${audioBytes}`);
+      const speed = (durationEstimate * 1000 / Math.max(1, ms)).toFixed(2);
+      const measurement = { format: ext, aspect: data.aspect, template: tpl.id, loops, photos: photos.length, withAudio: !!audio, elapsedMs: ms, outputBytes: blob.size, speedVsRealtimeApprox: Number(speed), jsHeapStartBytes: heapStart, jsHeapEndBytes: heapEnd, metadata: meta, audioDropped, audioDecodedBytes: audioBytes, userAgent: navigator.userAgent };
+      setLog(`RESULT ok ext=${ext} bytes=${blob.size} box=${sig} ms=${ms} ${meta} audioDropped=${audioDropped} audioDecodedBytes=${audioBytes}\\nMETRICS ${JSON.stringify(measurement)}`);
     })().catch((e) => setLog(`RESULT error ${String(e?.message ?? e)}`));
   }, []);
   return (
