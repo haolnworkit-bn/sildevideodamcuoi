@@ -45,7 +45,8 @@ export function drawAssetBackground(rc: RenderContext, id: string): boolean {
   if (!img) return false;
   const { ctx, W, H } = rc;
   const u = rc.t / rc.D;
-  const zoom = 1 + (spec.zoom ?? 0) * (0.5 + 0.5 * Math.sin(TAU * u));
+  const amount = rc.portrait ? spec.portraitZoom ?? spec.zoom ?? 0 : spec.zoom ?? 0;
+  const zoom = 1 + amount * (0.5 + 0.5 * Math.sin(TAU * u));
   const k = Math.max(W / img.width, H / img.height) * zoom;
   const w = img.width * k;
   const h = img.height * k;

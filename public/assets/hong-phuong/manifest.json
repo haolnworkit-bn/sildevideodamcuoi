@@ -6,10 +6,10 @@
     {
       "file": "backgrounds/landscape.webp",
       "source": "chatgpt-image",
-      "licenseStatus": "commercial-use",
+      "licenseStatus": "unverified",
       "reviewStatus": "visual-qa-pending",
-      "origin": "ChatGPT Image — TaoSlideVideo Hong Phuong 2026",
-      "originalFileName": "a_refined_watercolor_background_scene_soft_blush_1.png",
+      "origin": "ChatGPT Image — HP-01 (B3, phương án A: nền giấy sạch)",
+      "originalFileName": "HP-01.png",
       "nativeDimensions": [
         1672,
         941
@@ -23,13 +23,13 @@
     {
       "file": "backgrounds/portrait.webp",
       "source": "chatgpt-image",
-      "licenseStatus": "commercial-use",
+      "licenseStatus": "unverified",
       "reviewStatus": "visual-qa-pending",
-      "origin": "ChatGPT Image — TaoSlideVideo Hong Phuong 2026",
-      "originalFileName": "a_vertical_9_16_watercolor_blush_pink_wedding_enga_2_batch_1.png",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-02), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
       "nativeDimensions": [
-        941,
-        1672
+        171,
+        304
       ],
       "outputDimensions": [
         1080,
@@ -136,6 +136,176 @@
       "outputDimensions": [
         376,
         386
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-tren-trai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-03), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        425,
+        253
+      ],
+      "outputDimensions": [
+        1200,
+        840
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-duoi-trai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-04), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        380,
+        255
+      ],
+      "outputDimensions": [
+        1230,
+        840
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-duoi-phai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-05), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        445,
+        254
+      ],
+      "outputDimensions": [
+        1230,
+        870
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/canh-tren-phai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-06), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        432,
+        255
+      ],
+      "outputDimensions": [
+        1280,
+        720
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/dai-lua-day.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-08), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        885,
+        90
+      ],
+      "outputDimensions": [
+        1470,
+        120
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/canh-hong-02.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-09a), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        200,
+        100
+      ],
+      "outputDimensions": [
+        192,
+        192
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/canh-hong-03.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-09b), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        222,
+        101
+      ],
+      "outputDimensions": [
+        192,
+        192
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-duoi-trai-portrait.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-04-P), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        352,
+        293
+      ],
+      "outputDimensions": [
+        1015,
+        800
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-duoi-phai-portrait.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-05-P), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        402,
+        287
+      ],
+      "outputDimensions": [
+        990,
+        810
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/den-long.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — Hồng Phượng B3 2026-11-20 (HP-07), cắt từ ảnh ghép rồi upscale bằng Pillow (bản nháp, nên tạo lại độ phân giải gốc)",
+      "originalFileName": "a_clean_png_asset_sheet_on_a_transparent_checkerbo.png",
+      "nativeDimensions": [
+        185,
+        314
+      ],
+      "outputDimensions": [
+        480,
+        1314
       ],
       "alpha": true
     }

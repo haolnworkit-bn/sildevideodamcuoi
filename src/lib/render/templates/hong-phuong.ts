@@ -13,7 +13,7 @@ import type { VideoTemplate } from "../types";
 
 /**
  * Hồng Phượng — mẫu lễ ăn hỏi.
- * Hình minh hoạ (nền hồng đào, phượng, sen, dải lụa) là ẢNH, khai báo ở src/config/template-assets.ts
+ * Hình minh hoạ (nền giấy, cành đào, mẫu đơn, nón lá, đèn lồng, dải lụa) là ẢNH, khai báo ở src/config/template-assets.ts
  * (thư mục ảnh: public/assets/hong-phuong/). File này chỉ có màu chữ, nền dự phòng (gradient),
  * khung ảnh (hình học) và hạt lấp lánh.
  */
@@ -27,7 +27,7 @@ const sparks = makeLoopParticles(26, 71, { minSize: 3, maxSize: 7, maxLoops: 1, 
 export const hongPhuong: VideoTemplate = {
   id: "hong-phuong",
   name: "Hồng Phượng Ăn Hỏi",
-  description: "Nền hồng đào màu nước, phượng đỏ, sen hồng và dải lụa — dành cho lễ ăn hỏi",
+  description: "Giấy màu nước hồng đào, cành đào, mẫu đơn, nón lá và đèn lồng — dành cho lễ ăn hỏi",
   tier: "free",
   swatch: ["#fbd3d8", "#a8324c", "#8f0f1b"],
   colors: ["hong", "do"],
@@ -70,28 +70,7 @@ export const hongPhuong: VideoTemplate = {
     g.lineWidth = 1.5;
     rr(12, 10);
     g.stroke();
-    if (!rc.portrait && getAsset("/assets/hong-phuong/backgrounds/landscape.webp")) {
-      // che nét viền ở bốn góc nhiều hoa của nền mới (tọa độ tỉ lệ khung)
-      const hide = (cx: number, cy: number, rx: number, ry: number) => {
-        g.save();
-        g.globalCompositeOperation = "destination-out";
-        g.translate(cx * W, cy * H);
-        g.scale(rx * W, ry * H);
-        const k = g.createRadialGradient(0, 0, 0, 0, 0, 1);
-        k.addColorStop(0, "rgba(0,0,0,1)");
-        k.addColorStop(0.7, "rgba(0,0,0,1)");
-        k.addColorStop(1, "rgba(0,0,0,0)");
-        g.fillStyle = k;
-        g.beginPath();
-        g.arc(0, 0, 1, 0, TAU);
-        g.fill();
-        g.restore();
-      };
-      hide(0.08, 0.07, 0.13, 0.10);
-      hide(0.12, 0.93, 0.18, 0.13);
-      hide(0.89, 0.06, 0.18, 0.10);
-      hide(0.95, 0.90, 0.13, 0.14);
-    }
+    // Nền ngang mới (phương án A) là giấy sạch; hoa góc là lớp ảnh riêng vẽ SAU backdrop nên tự nằm trên viền.
     ctx.drawImage(scratchCanvas("hp-frame", W, H), 0, 0, W, H);
 
     const size = rc.portrait ? W * 0.375 : H * 0.3;

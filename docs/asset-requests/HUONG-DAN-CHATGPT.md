@@ -58,22 +58,16 @@ Bắt đầu bằng B1.
 - **Nền trong suốt:** yêu cầu rõ *"PNG, transparent background, isolated object, no shadow on ground, no frame"*. Kiểm tra trước khi nhận: mở ảnh trên nền tối, không được có viền trắng hay ô cờ giả.
 - **Kích thước:** ChatGPT thường xuất 1536×1024 hoặc 1024×1536. Muốn có nền 16:9 thì cắt ra 1536×864 rồi upscale ×1.25 lên 1920×1080 bằng công cụ upscale AI, không phóng thô. Ghi kích thước gốc vào `nativeDimensions`.
 - **Đồng nhất:** mỗi lần tạo asset, nhắc lại *"theo đúng phong cách ảnh tham chiếu đã duyệt, cùng bảng màu <hex>"*. Đính kèm lại ảnh tham chiếu nếu ChatGPT bắt đầu lệch.
-- **Một vật mỗi ảnh:** đừng xin "bộ 5 bông sen" trong một ảnh rồi tự cắt. Xin từng bông.
+- **Một vật mỗi ảnh:** đừng xin "bộ 5 bông sen" trong một ảnh rồi tự cắt. Xin từng bông. Bài học Hồng Phượng B3: ảnh ghép rồi cắt ra chỉ còn ~400px, phải phóng ×3 và dính mẩu vật bên cạnh.
 - **Hạt rơi (cánh hoa, lá):** vật ở chính giữa, cắt sát, nhiều biến thể nhỏ khác nhau.
 - **Nền:** xin rõ *"empty center for text, decorations only in corners, no text, no letters, no calligraphy, no watermark"*. AI hay tự chèn chữ giả, cần soi kỹ.
 
 ## 5. Gói bàn giao cho Claude
 
-Một file zip cho mỗi mẫu, cấu trúc **giống hệt** thư mục trong repo:
+**Định dạng trong repo: WebP** (nền: WebP không alpha; trang trí/hạt: WebP có alpha). ChatGPT Image chỉ tải về được PNG,
+nên **không cần ChatGPT tự đổi đuôi**: cứ nộp PNG gốc lớn nhất, Claude chuyển sang WebP (sharp), đặt tên, cập nhật manifest.
 
-```text
-<id-mau>.zip
-  backgrounds/landscape.webp
-  backgrounds/portrait.webp
-  decorations/*.webp          (kể cả ornament-*.webp)
-  particles/*.webp
-  handoff.md                  bảng bàn giao (file, lớp, neo, x/y, cỡ, chuyển động)
-  manifest-entries.json       các mục JSON theo mẫu trong quy cách chung
-```
+Cách nộp đơn giản nhất: tải từng ảnh về `_inbox/<id-mau>/` (thư mục bị git bỏ qua), đặt tên theo mã asset
+(`HP-03.png`…), rồi báo Claude. Kèm bảng đặt asset (neo, x/y, cỡ, chuyển động) nếu khác hồ sơ đã duyệt.
 
-Ảnh gốc khổ lớn, bản nháp và ảnh tham chiếu **không đưa vào zip**. Lưu chúng ở Google Drive theo thư mục `<id-mau>/goc/` để giữ làm bằng chứng nguồn gốc. Repo chỉ chứa bản đã duyệt.
+Ảnh gốc khổ lớn và ảnh tham chiếu nên lưu thêm ở Google Drive theo thư mục `<id-mau>/goc/` để giữ làm bằng chứng nguồn gốc. Repo chỉ chứa bản WebP đã duyệt.
