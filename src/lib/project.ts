@@ -176,6 +176,9 @@ export function dateInfo(d: ProjectData): DateInfo {
   const mm = Number(m[2]);
   const dd = Number(m[3]);
   const dt = new Date(yy, mm - 1, dd);
+  if (yy < 1900 || yy > 2100 || dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd) {
+    return { valid: false, weekday: "", day: "", month: "", year: "", solar: "", lunar: "", time };
+  }
   const l = solarToLunar(dd, mm, yy);
   const lunar = d.showLunar
     ? `Tức ngày ${l.day} tháng ${l.month}${l.leap ? " nhuận" : ""} năm ${canChiYear(l.year)}`
@@ -196,6 +199,8 @@ function formatTime(t: string): string {
   const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
   if (!m) return "";
   const h = Number(m[1]);
+  const minutes = Number(m[2]);
+  if (h > 23 || minutes > 59) return "";
   return m[2] === "00" ? `Vào lúc ${h} giờ` : `Vào lúc ${h} giờ ${m[2]}`;
 }
 
