@@ -11,7 +11,7 @@ let dbp: Promise<IDBDatabase> | null = null;
 
 function db(): Promise<IDBDatabase> {
   if (!dbp) {
-    dbp = new Promise((resolve, reject) => {
+    dbp = new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => req.result.createObjectStore(STORE);
       req.onsuccess = () => {
@@ -24,7 +24,7 @@ function db(): Promise<IDBDatabase> {
       throw err;
     });
   }
-  return dbp;
+  return dbp!;
 }
 
 async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
