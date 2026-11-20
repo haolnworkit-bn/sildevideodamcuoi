@@ -38,6 +38,7 @@ export function computeEntitlement(template: VideoTemplate, unlocked: boolean): 
 
 // MVP: trạng thái đã mua lưu trên trình duyệt. Khi có tài khoản + DB, thay 2 hàm này bằng API.
 export function isUnlocked(projectId: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   try {
     return localStorage.getItem(KEY(projectId)) === "1";
   } catch {
@@ -66,7 +67,9 @@ export async function startCheckout(projectId: string, templateId: string): Prom
       body: JSON.stringify({ projectId, templateId }),
     });
     const json = (await res.json()) as CheckoutResult;
-    if (json.status === "paid") markUnlocked(projectId);
+    // Only the local dev mock may grant browser-local entitlements.
+    // Production must use server-verified purchase receipts and enforce exports server-side.
+    if (json.status === "paid" && process.env.NODE_ENV !== "production") markUnlocked(projectId);
     return json;
   } catch {
     return { status: "error", message: "Không kết nối được máy chủ thanh toán" };

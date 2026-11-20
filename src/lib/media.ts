@@ -11,22 +11,32 @@ let dbp: Promise<IDBDatabase> | null = null;
 
 function db(): Promise<IDBDatabase> {
   if (!dbp) {
-    dbp = new Promise((resolve, reject) => {
+    dbp = new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        req.result.onversionchange = () => req.result.close();
+        resolve(req.result);
+      };
       req.onerror = () => reject(req.error);
+    }).catch((err) => {
+      dbp = null; // Allow retry after blocked/private-mode storage or transient errors.
+      throw err;
     });
   }
-  return dbp;
+  return dbp!;
 }
 
 async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const d = await db();
   return new Promise((resolve, reject) => {
-    const req = fn(d.transaction(STORE, mode).objectStore(STORE));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    const transaction = d.transaction(STORE, mode);
+    let value: T;
+    transaction.oncomplete = () => resolve(value);
+    transaction.onerror = () => reject(transaction.error ?? new Error("IndexedDB transaction failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted"));
+    const req = fn(transaction.objectStore(STORE));
+    req.onsuccess = () => { value = req.result; };
   });
 }
 

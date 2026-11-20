@@ -15,12 +15,12 @@ export async function POST(req: Request) {
 
   // Không cấu hình gì thì chỉ cho mock ở môi trường dev, tránh lỡ "miễn phí" trên production
   const provider = process.env.PAYMENT_PROVIDER ?? (process.env.NODE_ENV === "production" ? "none" : "mock");
-  if (provider === "mock") {
+  if (provider === "mock" && process.env.NODE_ENV !== "production") {
     return NextResponse.json({ status: "paid" });
   }
 
   return NextResponse.json(
-    { status: "error", message: `Cổng thanh toán "${provider}" chưa được tích hợp` },
+    { status: "error", message: `Chưa cấu hình cổng thanh toán đã xác minh phía server (${provider}). Không cấp quyền xuất sạch.` },
     { status: 501 },
   );
 }
