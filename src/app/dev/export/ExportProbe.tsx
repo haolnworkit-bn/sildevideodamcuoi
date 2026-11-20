@@ -6,6 +6,7 @@ import { FONT_LIB, ensureFontsLoaded } from "@/lib/fonts";
 import { createDefaultProject, type Aspect } from "@/lib/project";
 import { getTemplate } from "@/lib/render/templates";
 import type { Photo } from "@/lib/render/types";
+import { computeTimeline } from "@/lib/render/timeline";
 
 /** Nhạc thử: hợp âm sin 4 giây */
 async function synthAudio(): Promise<AudioBuffer> {
@@ -50,7 +51,7 @@ export default function ExportProbe() {
       const { blob, ext, audioDropped } = await exportVideo({ template: tpl, data, photos, fonts: FONT_LIB, watermark: null, loops, audio, forceWebm });
       const ms = Math.round(performance.now() - t0);
       const heapEnd = heap();
-      const durationEstimate = 20 * loops;
+      const durationEstimate = computeTimeline(data, photos.length).duration * loops;
       const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
       const sig = String.fromCharCode(...head.slice(4, 8));
       const u = URL.createObjectURL(blob);
