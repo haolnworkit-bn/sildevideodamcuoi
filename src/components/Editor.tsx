@@ -306,7 +306,7 @@ export default function Editor() {
   const pay = async () => {
     setExp({ kind: "paying" });
     const r = await startCheckout(data.id, template.id);
-    if (r.status === "paid") {
+    if (r.status === "paid" && process.env.NODE_ENV !== "production") {
       setUnlocked(true);
       runExport(null);
     } else if (r.status === "redirect") {
