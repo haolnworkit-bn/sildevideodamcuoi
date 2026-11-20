@@ -1,18 +1,92 @@
 {
   "templateId": "quan-ho-kinh-bac",
   "schemaVersion": 1,
-  "notes": "Bản thử phong cách màu nước (2026-11-20): nền ngang tạm là ảnh xem trước toàn cảnh của ChatGPT (sen, tre, đình, người dính chung nền). Sẽ thay bằng nền giấy sạch + asset tách lớp QH-03..QH-10. sen-bong (legacy, nghi giống cinelove) đã bỏ.",
+  "notes": "Màu nước (2026-11-20): nền vẽ liền riêng ngang/dọc do ChatGPT tạo; cánh sen rơi tách PNG. Nền ngang là bản 1672×941 phóng lên. sen-bong (legacy) đã bỏ.",
   "assets": [
     {
       "file": "backgrounds/landscape.webp",
       "source": "chatgpt-image",
       "licenseStatus": "unverified",
       "reviewStatus": "visual-qa-pending",
-      "origin": "ChatGPT Image — ảnh xem trước toàn cảnh Quan Họ màu nước (dùng tạm làm QH-01), upscale lanczos3",
+      "origin": "ChatGPT Image — QH-01 nền ngang màu nước vẽ liền (ao sen, tre, đình), upscale lanczos3",
       "originalFileName": "QH-01.webp",
-      "nativeDimensions": [1672, 941],
-      "outputDimensions": [1920, 1080],
+      "nativeDimensions": [
+        1672,
+        941
+      ],
+      "outputDimensions": [
+        1920,
+        1080
+      ],
       "alpha": false
+    },
+    {
+      "file": "backgrounds/portrait.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — QH-02 nền dọc màu nước vẽ liền",
+      "originalFileName": "portrait.webp",
+      "nativeDimensions": [
+        1080,
+        1920
+      ],
+      "outputDimensions": [
+        1080,
+        1920
+      ],
+      "alpha": false
+    },
+    {
+      "file": "particles/canh-sen-01.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — QH-09 cánh sen hồng rơi kiểu 1, cắt sát + thu nhỏ",
+      "originalFileName": "canh-sen-01.png",
+      "nativeDimensions": [
+        1024,
+        1024
+      ],
+      "outputDimensions": [
+        256,
+        198
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/canh-sen-02.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — QH-09 cánh sen hồng rơi kiểu 2, cắt sát + thu nhỏ",
+      "originalFileName": "canh-sen-02.png",
+      "nativeDimensions": [
+        1024,
+        1024
+      ],
+      "outputDimensions": [
+        256,
+        186
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/canh-sen-03.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — QH-09 cánh sen hồng rơi kiểu 3, cắt sát + thu nhỏ",
+      "originalFileName": "canh-sen-03.png",
+      "nativeDimensions": [
+        1024,
+        1024
+      ],
+      "outputDimensions": [
+        112,
+        256
+      ],
+      "alpha": true
     }
   ]
 }

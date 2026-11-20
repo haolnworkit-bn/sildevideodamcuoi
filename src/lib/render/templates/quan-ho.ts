@@ -509,39 +509,38 @@ export const quanHo: VideoTemplate = {
     ctx.fillRect(W / 2 - 100, 54, 200, 6);
   },
 
-  /** Khổ ngang dùng ảnh nền màu nước có cảnh ao/đình ở nửa dưới → phủ quầng giấy kem mờ sau khối chữ cho dễ đọc */
+  /** Nền màu nước có cảnh ao/đình ở nửa dưới → phủ quầng giấy kem mờ sau khối chữ cho dễ đọc */
   backdrop(rc) {
-    if (rc.portrait) return;
     const { ctx, W, H } = rc;
     ctx.save();
-    ctx.translate(W * 0.5, H * 0.58);
-    ctx.scale(1, 0.62);
-    radialGlow(ctx, 0, 0, W * 0.4, "rgba(250,243,226,0.72)");
+    if (rc.portrait) {
+      ctx.translate(W * 0.5, H * 0.6);
+      ctx.scale(1, 1.15);
+      radialGlow(ctx, 0, 0, W * 0.55, "rgba(250,243,226,0.7)");
+    } else {
+      ctx.translate(W * 0.5, H * 0.58);
+      ctx.scale(1, 0.62);
+      radialGlow(ctx, 0, 0, W * 0.4, "rgba(250,243,226,0.72)");
+    }
     ctx.restore();
   },
 
+  /** Cánh sen rơi là ảnh (template-assets `falling`); code chỉ thêm vài lá tre mảnh màu lá sen */
   foreground(rc) {
     const { ctx, W, H, t, D } = rc;
     const u = t / D;
     for (const p of particlesFor(rc, leaves)) {
+      if (p.pick > 0.4) continue;
       const q = particleAt(p, u, W, H, 40, 1);
       ctx.save();
       ctx.translate(q.x, q.y);
       ctx.rotate(q.rot);
       ctx.scale(0.4 + 0.6 * Math.abs(q.flip), 1);
-      ctx.globalAlpha *= 0.85;
-      if (p.pick > 0.55) {
-        // cánh sen hồng rơi
-        ctx.fillStyle = p.pick > 0.8 ? "#f7b9cc" : "#f2a2bb";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size * 0.5, p.size * 0.28, 0, 0, TAU);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = p.pick > 0.3 ? "#c9a24a" : "#b3261e";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size * 0.55, p.size * 0.14, 0, 0, TAU);
-        ctx.fill();
-      }
+      ctx.globalAlpha *= 0.6;
+      ctx.fillStyle = p.pick > 0.2 ? "#9fb27a" : "#c2b56e";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size * 0.55, p.size * 0.12, 0, 0, TAU);
+      ctx.fill();
       ctx.restore();
     }
   },

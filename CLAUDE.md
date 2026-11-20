@@ -114,6 +114,9 @@ Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool R
   phủ quầng giấy kem sau khối chữ (chỉ khổ ngang); khung ảnh passe-partout; ornament nón quai thao code → đường kẻ + hạt thoi. Khổ dọc vẫn nền Đông Hồ code (tạm).
   `sen-bong` đã xoá. Quy cách §6 mới (tự chấm A–D trước khi gửi ảnh; D = nền vẽ liền được phép, chỉ tách vật cần chuyển động).
   Chờ ChatGPT: nền dọc vẽ liền + 3 cánh sen rơi.
+- 2026-11-20 (Quan Họ khổ dọc, nhánh `design/quan-ho-portrait`, PR): thêm `backgrounds/portrait.webp` (vẽ liền) + `particles/canh-sen-01..03.webp`
+  (falling); backdrop quầng kem cả 2 khổ; hạt code chỉ còn lá tre mảnh. /dev/layout 0 lỗi; MP4 9:16 2 vòng có nhạc 55.6s.
+  Còn: code vẽ Đông Hồ cũ (người/tre/ao sen/diepPaper) bị ảnh nền che hết nhưng chưa xoá; nền ngang là bản upscale ×1.15. Tiếp theo: Hoa Đào (phiếu HD).
 - 2026-11-20 (Hồng Phượng B3, nhánh `design/hong-phuong-b3`, PR): quy trình ChatGPT chạy thật lần đầu. Hồ sơ đã duyệt: `docs/templates/hong-phuong.md`
   (có bảng đặt asset). Nền ngang mới là giấy sạch (đã BỎ mẹo `hide(...)` che viền); 4 cụm góc, đèn lồng (chỉ dọc), lụa đáy (front), 2 cánh rơi
   khai báo trong `template-assets.ts`; thêm `background.portraitZoom`. ChatGPT nộp PNG → Claude đổi WebP (sharp, q90). Ảnh thô để ở `_inbox/<id>/` (gitignore).
