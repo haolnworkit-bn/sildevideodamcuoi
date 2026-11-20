@@ -312,7 +312,7 @@ export default function Editor() {
     } else if (r.status === "redirect") {
       window.location.href = r.url;
     } else {
-      setExp({ kind: "error", message: r.message });
+      setExp({ kind: "error", message: r.status === "error" ? r.message : "Thanh toán chưa được hỗ trợ trong production" });
     }
   };
 
