@@ -109,6 +109,9 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-20 (Số cảnh 1/2/3, nhánh `feat/scene-count`, PR): `scenes.intro` mới; `textSceneCount`/`scenesForCount` trong timeline.ts;
+  1 cảnh = chỉ Tên & ngày, dài `SINGLE_SCENE`=8s, runScenes giữ chữ đứng yên (v=1, lt=SETTLED) để lặp không nháy. UI: nút "1/2/3 cảnh" ở thẻ Nội dung.
+  /dev/frames thêm `&scenes=1|2|3`. Chưa thử xuất MP4 chế độ 1 cảnh. ChatGPT đang làm Hoa Đào (nền vẽ liền, bản sắc Tết, khác Hồng Phượng).
 - 2026-11-20 (Quan Họ màu nước, nhánh `design/quan-ho-watercolor`, PR): BỎ hướng Đông Hồ (ảnh AI trông giả, sai văn hoá) → màu nước thực vật học.
   Nền ngang = ảnh toàn cảnh vẽ liền của ChatGPT (`backgrounds/landscape.webp`, 1672×941 upscale). Theme hồng sen/mực ô-liu/xanh lá sen; hook `backdrop`
   phủ quầng giấy kem sau khối chữ (chỉ khổ ngang); khung ảnh passe-partout; ornament nón quai thao code → đường kẻ + hạt thoi. Khổ dọc vẫn nền Đông Hồ code (tạm).

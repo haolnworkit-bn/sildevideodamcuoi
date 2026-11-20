@@ -57,7 +57,8 @@ export interface ProjectData {
   /** Ảnh: ảnh đầu tiên là ảnh chính; từ 2 ảnh trở lên có thêm cảnh "Khoảnh khắc" */
   photos: PhotoMeta[];
   photoSide: "left" | "right";
-  scenes: { message: boolean; album: boolean };
+  /** Cảnh chữ: intro (Giới thiệu) và message (Lời cảm ơn) tắt được; "Tên & ngày" luôn có. album = Khoảnh khắc (≥2 ảnh) */
+  scenes: { intro: boolean; message: boolean; album: boolean };
   style: StyleOverrides;
   fx: FxSettings;
   music: MusicSettings;
@@ -96,7 +97,7 @@ export function createDefaultProject(templateId: string, eventType: EventTypeId)
     message: EVENT_TYPES[eventType].defaultMessage,
     photos: [],
     photoSide: "left",
-    scenes: { message: true, album: true },
+    scenes: { intro: true, message: true, album: true },
     style: {},
     fx: { particles: 1, transition: "fade" },
     music: { enabled: false, volume: 0.8, name: "" },

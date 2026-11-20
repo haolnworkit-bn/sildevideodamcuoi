@@ -69,6 +69,9 @@ export function drawEntering(ctx: CanvasRenderingContext2D, p: number, dy: numbe
   ctx.restore();
 }
 
+/** Thời điểm mọi phần tử của cảnh đã hiện xong (trễ tối đa 1.7s + 1.1s) */
+const SETTLED = 3.5;
+
 /** Chạy các cảnh theo timeline với kiểu chuyển cảnh đã chọn */
 export function runScenes(
   rc: RenderContext,
@@ -76,12 +79,14 @@ export function runScenes(
   fade = 1,
 ) {
   const { ctx, t, D, W, H, fx } = rc;
+  // Chỉ 1 cảnh: chữ đứng yên suốt vòng lặp (không mờ/hiện lại ở điểm nối, không chạy lại hiệu ứng vào cảnh)
+  const single = rc.timeline.scenes.length === 1;
   for (const s of rc.timeline.scenes) {
     const draw = draws[s.type];
     if (!draw) continue;
-    const v = sceneVisibility(t, D, s, fade);
+    const v = single ? 1 : sceneVisibility(t, D, s, fade);
     if (v <= 0.001) continue;
-    const lt = sceneLocalTime(t, D, s, fade);
+    const lt = single ? SETTLED : sceneLocalTime(t, D, s, fade);
     ctx.save();
     ctx.globalAlpha *= v;
     applyTransition(ctx, fx.transition, v, lt < (s.end - s.start) / 2, W, H);
