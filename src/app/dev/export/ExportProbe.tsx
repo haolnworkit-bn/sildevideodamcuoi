@@ -44,7 +44,8 @@ export default function ExportProbe() {
     (async () => {
       await ensureFontsLoaded();
       const audio = q.get("audio") === "1" ? await synthAudio() : null;
-      const { blob, ext, audioDropped } = await exportVideo({ template: tpl, data, photos, fonts: FONT_LIB, watermark: null, loops, audio });
+      const forceWebm = q.get("webm") === "1";
+      const { blob, ext, audioDropped } = await exportVideo({ template: tpl, data, photos, fonts: FONT_LIB, watermark: null, loops, audio, forceWebm });
       const ms = Math.round(performance.now() - t0);
       const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
       const sig = String.fromCharCode(...head.slice(4, 8));
@@ -54,7 +55,19 @@ export default function ExportProbe() {
       v.muted = true;
       v.src = u;
       const meta = await new Promise<string>((r) => {
-        v.onloadedmetadata = () => r(`duration=${v.duration.toFixed(2)}s size=${v.videoWidth}x${v.videoHeight}`);
+        v.onloadedmetadata = () => {
+          const size = `size=${v.videoWidth}x${v.videoHeight}`;
+          if (Number.isFinite(v.duration)) return r(`duration=${v.duration.toFixed(2)}s ${size}`);
+          // WebM của MediaRecorder thường thiếu duration trong header → tua tới cuối để trình duyệt tính
+          v.ondurationchange = () => {
+            if (Number.isFinite(v.duration)) {
+              v.ondurationchange = null;
+              v.currentTime = 0;
+              r(`duration=${v.duration.toFixed(2)}s(headerless) ${size}`);
+            }
+          };
+          v.currentTime = 1e9;
+        };
         v.onerror = () => r("meta=error");
       });
       // phát thử 1.5s để đo số byte âm thanh trình duyệt giải mã được

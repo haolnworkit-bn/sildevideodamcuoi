@@ -77,6 +77,8 @@ export interface TemplateAssets {
   /** Lớp ở PHÍA TRƯỚC chữ/ảnh cưới (dùng tiết chế, tránh che chữ) */
   front?: ImageLayer[];
   falling?: FallingSpec[];
+  /** Ảnh mà CODE của mẫu tự vẽ (vd ornament, khung) — khai báo để được tải trước khi preview/xuất */
+  preload?: string[];
 }
 
 export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
@@ -115,6 +117,8 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
    * Nền: chỉ có bản ngang; khung dọc dùng chính ảnh đó cắt giữa (giấy hồng màu nước) — nên tạo thêm nền dọc riêng.
    */
   "hong-phuong": {
+    // dải lụa dùng làm hoạ tiết phía trên "Lời cảm ơn" (vẽ trong hong-phuong.ts → ornament)
+    preload: ["/assets/hong-phuong/dai-lua-hong.webp"],
     background: {
       landscape: "/assets/hong-phuong/nen.webp",
       portrait: "/assets/hong-phuong/nen.webp",

@@ -7,13 +7,13 @@ import { FEATURES, formatVnd } from "@/config/features";
 import { computeEntitlement, isUnlocked, startCheckout } from "@/lib/billing/entitlements";
 import { loadDraft, saveDraft, takeLegacyPhoto } from "@/lib/draft";
 import { isEventType } from "@/lib/events";
-import { decodeAudio, exportPoster, exportVideo } from "@/lib/export/video";
+import { decodeAudio, detectExportCapability, exportPoster, exportVideo, type ExportCapability } from "@/lib/export/video";
 import { FONT_LIB, ensureFontsLoaded } from "@/lib/fonts";
 import { deleteBlob, getBlob, loadImage, musicKey, prepareUpload, putBlob } from "@/lib/media";
 import { MAX_PHOTOS, createDefaultProject, eventTitle, givenName, uid, type Aspect, type ProjectData } from "@/lib/project";
 import { TEMPLATES, getTemplate } from "@/lib/render/templates";
 import { computeTimeline, formatTime } from "@/lib/render/timeline";
-import type { Photo } from "@/lib/render/types";
+import { STAGE, type Photo } from "@/lib/render/types";
 import { ContentPanel, FxPanel, MusicPanel, PhotosPanel, StylePanel, TemplatesPanel, switchEvent } from "./EditorPanels";
 import Presenter from "./Presenter";
 import PreviewPlayer, { sceneSnapTime } from "./PreviewPlayer";
@@ -72,6 +72,18 @@ export default function Editor() {
   const [target, setTarget] = useState(20);
   const [presenting, setPresenting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // Khả năng xuất của trình duyệt (MP4 nhanh / WebM thời gian thực / có nhạc không) — kiểm tra khi mở hộp thoại xuất
+  const [cap, setCap] = useState<ExportCapability | null>(null);
+  const aspect = data?.aspect;
+  useEffect(() => {
+    if (exp.kind !== "options" || !aspect) return;
+    let alive = true;
+    const { W, H } = STAGE[aspect];
+    detectExportCapability(W, H).then((c) => alive && setCap(c));
+    return () => {
+      alive = false;
+    };
+  }, [exp.kind, aspect]);
 
   // ---------- khởi tạo: bản nháp + query + ảnh/nhạc trong IndexedDB ----------
   useEffect(() => {
@@ -231,7 +243,7 @@ export default function Editor() {
         onProgress: (p) => setExp({ kind: "running", progress: p, label: p < 0.86 || !audio ? "Đang dựng hình…" : "Đang ghép nhạc…" }),
       });
       const note = audioDropped
-        ? "Trình duyệt này chưa mã hoá được âm thanh AAC nên video không có nhạc. Hãy dùng Chrome/Edge trên Windows hoặc macOS, hoặc phát nhạc riêng khi trình chiếu."
+        ? "Trình duyệt này chưa ghép được nhạc vào video nên file không có tiếng. Hãy dùng Chrome/Edge trên Windows hoặc macOS, hoặc phát nhạc riêng khi trình chiếu."
         : musicOn && !audio
           ? "Không đọc được file nhạc nên video không có tiếng."
           : undefined;
@@ -379,9 +391,22 @@ export default function Editor() {
                     : `Lặp ${chosen.loops} vòng trong một file, cho TV không có chế độ lặp lại.`}
                   {musicOn ? ` Có nhạc nền: ${data.music.name}.` : ""}
                 </p>
+                {cap && !cap.mp4 && cap.webm && (
+                  <p className="warn">
+                    Trình duyệt này không xuất được MP4 nhanh. Video sẽ là file <strong>WebM</strong>, ghi theo thời gian thực:
+                    mất khoảng <strong>{chosen.label}</strong> và phải để nguyên tab này mở. Một số TV không mở được WebM, nên
+                    dùng Chrome hoặc Edge trên máy tính để có file MP4.
+                  </p>
+                )}
+                {cap && musicOn && (cap.mp4 ? !cap.mp4Audio : cap.webm && !cap.webmAudio) && (
+                  <p className="warn">Trình duyệt này không ghép được nhạc vào video, file xuất ra sẽ không có tiếng.</p>
+                )}
+                {cap && !cap.mp4 && !cap.webm && (
+                  <p className="warn">Trình duyệt này không hỗ trợ xuất video. Hãy dùng Chrome hoặc Edge bản mới, hoặc dùng nút Trình chiếu.</p>
+                )}
                 <div className="modal-actions">
-                  <button className="btn primary" onClick={startExport}>
-                    Xuất MP4 {chosen.label}
+                  <button className="btn primary" onClick={startExport} disabled={!!cap && !cap.mp4 && !cap.webm}>
+                    Xuất {cap && !cap.mp4 ? "WebM" : "MP4"} {chosen.label}
                   </button>
                   <button className="btn ghost" onClick={savePoster}>
                     Tải ảnh PNG

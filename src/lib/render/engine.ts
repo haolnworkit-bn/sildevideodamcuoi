@@ -1,7 +1,7 @@
 import type { ProjectData } from "../project";
 import { drawAssetBackground, drawAssetFalling, drawAssetLayers } from "./layers";
-import { drawWatermark, runScenes } from "./helpers";
-import { albumScene, introScene, messageScene, namesScene } from "./scenes";
+import { drawWatermark, runScenes, scratchCanvas, setSpacing } from "./helpers";
+import { albumScene, fitMessage, introScene, messageFont, messageScene, namesScene, type MessageFit } from "./scenes";
 import { resolveFonts, resolveTheme } from "./theme";
 import { computeTimeline } from "./timeline";
 import { STAGE, type FontLibrary, type Photo, type RenderContext, type Timeline, type VideoTemplate } from "./types";
@@ -21,6 +21,29 @@ export function stageOf(data: ProjectData) {
 
 export function timelineOf(input: Pick<FrameInput, "data" | "photos">): Timeline {
   return computeTimeline(input.data, input.photos.length);
+}
+
+/** Trạng thái vẽ mặc định cho mỗi lớp (chữ, bóng, hoà trộn) */
+function resetDrawState(ctx: CanvasRenderingContext2D) {
+  setSpacing(ctx, 0);
+  ctx.textAlign = "start";
+  ctx.textBaseline = "alphabetic";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowColor = "rgba(0,0,0,0)";
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/**
+ * Kiểm tra lời cảm ơn có vừa khung với font/cỡ của mẫu không — để editor cảnh báo TRƯỚC khi xuất.
+ * Dùng đúng thuật toán của messageScene (fitMessage).
+ */
+export function checkMessageFit(input: Pick<FrameInput, "template" | "data" | "fonts">): MessageFit | null {
+  if (typeof document === "undefined") return null;
+  const fonts = resolveFonts(input.fonts, input.template, input.data.style);
+  const ctx = scratchCanvas("msg-fit", 8, 8).getContext("2d")!;
+  return fitMessage(ctx, input.data.message, messageFont({ fonts }, input.template), stageOf(input.data).H > stageOf(input.data).W);
 }
 
 /**
@@ -55,43 +78,34 @@ export function renderFrame(ctx: CanvasRenderingContext2D, t: number, input: Fra
     fx: data.fx,
   };
 
-  ctx.save();
-  tpl.background(rc);
-  ctx.restore();
-
-  // Ảnh trang trí khai báo trong src/config/template-assets.ts
-  ctx.save();
-  drawAssetBackground(rc, tpl.id);
-  ctx.restore();
-
-  // Viền khung / chữ chìm của mẫu: nằm trên ảnh nền nhưng DƯỚI các ảnh trang trí (không đè lên vật thể)
-  if (tpl.backdrop) {
+  // Mỗi lớp vẽ trong save/restore riêng và bắt đầu với trạng thái chữ sạch (không rò letterSpacing/align…)
+  const layer = (fn: () => void) => {
     ctx.save();
-    tpl.backdrop(rc);
+    resetDrawState(ctx);
+    fn();
     ctx.restore();
-  }
+  };
 
-  ctx.save();
-  drawAssetLayers(rc, tpl.id, "back");
-  ctx.restore();
+  layer(() => tpl.background(rc));
+  // Ảnh trang trí khai báo trong src/config/template-assets.ts
+  layer(() => drawAssetBackground(rc, tpl.id));
+  // Viền khung / chữ chìm của mẫu: nằm trên ảnh nền nhưng DƯỚI các ảnh trang trí (không đè lên vật thể)
+  if (tpl.backdrop) layer(() => tpl.backdrop!(rc));
+  layer(() => drawAssetLayers(rc, tpl.id, "back"));
 
+  // runScenes đã bọc save/restore cho từng cảnh; chỉ cần đặt lại trạng thái chữ trước khi vẽ
   runScenes(rc, {
-    intro: (lt) => introScene(rc, lt, tpl),
-    message: (lt) => messageScene(rc, lt, tpl),
-    album: (lt, s) => albumScene(rc, lt, s, tpl),
-    names: (lt) => namesScene(rc, lt, tpl),
+    intro: (lt) => (resetDrawState(ctx), introScene(rc, lt, tpl)),
+    message: (lt) => (resetDrawState(ctx), messageScene(rc, lt, tpl)),
+    album: (lt, s) => (resetDrawState(ctx), albumScene(rc, lt, s, tpl)),
+    names: (lt) => (resetDrawState(ctx), namesScene(rc, lt, tpl)),
   });
 
-  ctx.save();
-  drawAssetLayers(rc, tpl.id, "front");
-  drawAssetFalling(rc, tpl.id);
-  ctx.restore();
-
-  if (tpl.foreground) {
-    ctx.save();
-    tpl.foreground(rc);
-    ctx.restore();
-  }
+  layer(() => {
+    drawAssetLayers(rc, tpl.id, "front");
+    drawAssetFalling(rc, tpl.id);
+  });
+  if (tpl.foreground) layer(() => tpl.foreground!(rc));
   if (input.watermark) drawWatermark(ctx, W, H, input.watermark, rc.fonts.sans);
   ctx.restore();
 }
