@@ -1,83 +1,89 @@
 # Quy chuẩn asset TaoSlideVideo
 
-> Áp dụng cho toàn bộ 16 template. **`public/assets/` chỉ chứa tài nguyên đã được chọn để ứng dụng sử dụng.** Nguồn ảnh và giấy phép phải được xác minh độc lập trước phát hành thương mại.
+> `public/assets/` chỉ chứa ảnh **đã được chọn để ứng dụng dùng**. Mọi file ở đây đều công khai trên website.
+> Phân vai: ChatGPT thiết kế và tạo asset, Claude tích hợp, chủ dự án duyệt. Xem [docs/AI_DESIGN_DEVELOPMENT_RULES.md](../../docs/AI_DESIGN_DEVELOPMENT_RULES.md).
+> Quy cách kỹ thuật và phiếu yêu cầu: [docs/asset-requests/](../../docs/asset-requests/). Hồ sơ thiết kế từng mẫu: [docs/templates/](../../docs/templates/).
 
 ## Cấu trúc
 
 ```text
 public/assets/
-  shared/{ornaments,particles,symbols}/
   <template-id>/
-    backgrounds/{landscape,portrait}.webp
-    decorations/*.webp
-    particles/*.webp
-    thumbnail.webp
-    manifest.json
-
-design-assets/  # không nằm trong public
-  generated/<template-id>/
-  collected/<template-id>/
-  references/
-  licenses/
+    backgrounds/landscape.webp   nền 16:9 (1920×1080)
+    backgrounds/portrait.webp    nền 9:16 (1080×1920), bố cục RIÊNG, không cắt từ bản ngang
+    decorations/*.webp           vật trang trí nền trong suốt; hoạ tiết phân cách đặt tên ornament-*.webp
+    particles/*.webp             cánh hoa / lá rơi
+    manifest.json                nguồn gốc, giấy phép, trạng thái duyệt của TỪNG file
+  shared/                        asset dùng chung nhiều mẫu, cùng 3 thư mục trên
+    manifest.json                templateId: "shared"
 ```
 
-Không bắt buộc mẫu nào cũng có mọi thư mục: Git không lưu thư mục rỗng. Các ảnh gốc, bản nháp AI chưa duyệt, ảnh sưu tầm chưa rõ giấy phép phải lưu **ngoài `public`**, không đưa vào website.
+- Mỗi thư mục chỉ có 3 nhóm `backgrounds/`, `decorations/`, `particles/`. Checker từ chối nhóm khác.
+- Tên file: chữ thường, không dấu, nối bằng `-`, đuôi `.webp`.
+- Mẫu chưa có nhóm nào thì không cần tạo thư mục rỗng.
+- Ảnh gốc khổ lớn, bản nháp AI, ảnh tham chiếu và bằng chứng giấy phép **không đưa vào repo**. Lưu ở Google Drive theo thư mục `<template-id>/goc/`.
 
-## Đường dẫn trong code
+## Khai báo trong code
 
-Khai báo background, `back`, `front`, `falling` và `preload` tại `src/config/template-assets.ts`. Ảnh được dùng bằng `getAsset(...)` trong template phải khai báo `preload`. Với asset dùng chung, dùng `/assets/shared/<nhóm>/<tên>.webp`.
+Mọi ảnh khai báo ở `src/config/template-assets.ts`:
 
-Ví dụ:
 ```ts
 "hong-phuong": {
   background: {
     landscape: "/assets/hong-phuong/backgrounds/landscape.webp",
-    // Chỉ thêm portrait khi có BẢN NỀN DỌC THỰC SỰ
-    zoom: 0.02,
+    portrait: "/assets/hong-phuong/backgrounds/portrait.webp",
+    zoom: 0.012,
   },
-  preload: ["/assets/hong-phuong/decorations/dai-lua-hong.webp"],
   back: [{
-    src: "/assets/hong-phuong/decorations/sen-doi.webp",
-    anchor: "br", x: 0.985, y: 1, height: 0.38,
-    portrait: { x: 0.97, height: 0.24 }
+    src: "/assets/hong-phuong/decorations/phoenix-pink.webp",
+    anchor: "tr", x: 0.98, y: 0.1, height: 0.3, alpha: 0.2,
+    motion: { sway: 0.008, breathe: 0.005, cycles: 2 },
+    portrait: { hide: true },
+  }],
+  falling: [{ src: "/assets/hong-phuong/particles/petal-pink-01.webp", count: 8, size: [0.014, 0.027] }],
+  preload: ["/assets/hong-phuong/decorations/silk-ribbon.webp"], // ảnh mà code mẫu tự vẽ qua getAsset()
+}
+```
+
+Thiếu bản nền của hướng nào thì hướng đó dùng nền vẽ bằng code của mẫu. Thiếu file thì engine bỏ qua lớp đó, mẫu vẫn chạy.
+
+## manifest.json
+
+```json
+{
+  "templateId": "hong-phuong",
+  "schemaVersion": 1,
+  "assets": [{
+    "file": "decorations/den-long.webp",
+    "source": "chatgpt-image",
+    "licenseStatus": "unverified",
+    "reviewStatus": "visual-qa-pending",
+    "origin": "ChatGPT Image — Hồng Phượng 2026",
+    "originalFileName": "…",
+    "nativeDimensions": [1024, 1536],
+    "outputDimensions": [800, 1200],
+    "alpha": true
   }]
 }
 ```
 
-**Lưu ý tương thích:** Tại thời điểm chuẩn hóa, Hồng Phượng dùng **cùng file nền ngang cho cả chế độ dọc**, để giữ nguyên hành vi hiện có. Đường dẫn `portrait` trong cấu hình vẫn trỏ tới `backgrounds/landscape.webp`; cần thay bằng `backgrounds/portrait.webp` khi đã tạo và kiểm duyệt nền dọc. Hoa Đào hiện thiếu nền dọc nên dùng background Canvas dự phòng.
+| Trường | Giá trị hợp lệ |
+|---|---|
+| `source` | `chatgpt-image` · `external` (bắt buộc `sourceUrl`) · `original` · `unknown` |
+| `licenseStatus` | `unverified` (mặc định) · `commercial-use` (chỉ khi **chủ dự án xác nhận**; `external` cần thêm `licenseEvidence`) · `restricted` |
+| `reviewStatus` | tự do, vd `visual-qa-pending`, `approved`, `legacy-needs-audit` |
 
-## Yêu cầu kỹ thuật
+Ảnh tạo bằng AI không mặc nhiên được dùng thương mại. Không ghi `commercial-use` nếu chưa có xác nhận.
 
-| Loại | Đầu ra | Kiểm duyệt |
-|---|---|---|
-| Nền ngang | WebP, mục tiêu 1920×1080+ | Không có chữ; giữ vùng trung tâm sạch |
-| Nền dọc | WebP, mục tiêu 1080×1920+ | Thiết kế riêng, không chỉ crop ảnh ngang |
-| Decor chính | WebP có alpha, cạnh dài ~1024–2048px | Tách nền sạch, không viền trắng |
-| Decor phụ | WebP có alpha, cạnh dài ~512–1024px | Đồng bộ chất liệu/ánh sáng |
-| Hạt rơi | WebP có alpha ~256–512px | Dễ đặt neo và chuyển động |
-| Thumbnail | WebP 960×540 | Nên xuất từ render thực tế |
+## Nhận asset mới (Claude làm)
 
-Không nâng ảnh nhỏ bằng cách nội suy rồi coi là đạt chất lượng. Không nhúng tên, ngày, lời cảm ơn hay watermark vào background. Nội dung động phải do Canvas render.
+1. Nhận gói zip của ChatGPT (cấu trúc như trên, kèm `handoff.md` + `manifest-entries.json`).
+2. Chép vào `public/assets/<id>/`, gộp mục manifest, khai báo trong `template-assets.ts`, gỡ phần vẽ bằng code đã được thay.
+3. Chạy `npm run check:assets`, `npm run test:assets`, `npm run typecheck`, `/dev/layout`, chụp `/dev/frames` ở 16:9 và 9:16 có/không ảnh, thử xuất MP4.
+4. Gửi ảnh chụp để ChatGPT nghiệm thu mỹ thuật; chủ dự án duyệt; mở PR (không tự merge).
 
-## Nguồn và giấy phép
+## Hiện trạng (2026-11-20)
 
-- `chatgpt-image`: ảnh AI gốc; vẫn phải kiểm tra chất lượng, tính nhất quán và dấu hiệu sao chép biểu tượng.
-- `external`: phải lưu URL nguồn, chủ sở hữu, giấy phép, ngày lấy, bằng chứng cấp quyền.
-- `unknown`: ảnh hiện có nhưng chưa có bằng chứng nguồn/quyền — **không được tự xác nhận đủ điều kiện thương mại**.
-- `manifest.json` trong mỗi template ghi tình trạng hiện tại; lưu tài liệu gốc/bằng chứng trong `design-assets/licenses/`.
-- Không dùng ảnh không rõ quyền sử dụng trong bản thương mại. Xóa file trùng chỉ sau khi xác nhận mọi nơi sử dụng.
-
-## Quy trình nhận asset mới
-
-1. Lưu ảnh gốc vào `design-assets/generated` hoặc `design-assets/collected` bên ngoài `public`; ghi metadata nguồn.
-2. Duyệt thẩm mỹ: bố cục, tỷ lệ, màu sắc, tính văn hóa và khả năng chuyển động.
-3. Tách nền, sửa alpha, xuất WebP, dùng tên **chữ thường không dấu, kebab-case**.
-4. Chép phiên bản duyệt vào `public/assets/<id>/<nhóm>/`; cập nhật `manifest.json`, `template-assets.ts` và mọi `getAsset`.
-5. Chạy `npm run check:assets`, `npm run typecheck`, kiểm tra `/dev/frames` ở 16:9 / 9:16, có/không ảnh, lời dài và xuất video.
-6. Merge sau review. Không push thẳng `main` hoặc `sprint-0-reliability`.
-
-## Hiện trạng chuyển đổi
-
-Đợt chuẩn hóa chỉ **chuyển đường dẫn, giữ nguyên bytes ảnh**: không tự xác nhận chất lượng, quyền sử dụng, không thay toàn bộ bằng ảnh ChatGPT. `public/chim_bo_cau.webp`, `public/chu_hy.webp`, `public/nhan_cuoi.webp` và `public/assets/phuong_hoang.webp` vẫn ở vị trí cũ vì chưa xác minh phạm vi sử dụng và không muốn phá tương thích.
-
-Các ảnh trùng bytes hiện còn được giữ ở từng thư mục template để bảo toàn đường dẫn và ownership thiết kế; có thể gom vào `shared/` ở một PR sau khi audit vị trí dùng.
+- Đã xoá các file cũ không dùng (sen, lồng đèn, phượng, lụa bản cũ của hong-phuong và quan-ho; ảnh lạc trong `public/`). Khôi phục được từ lịch sử git nếu cần.
+- Còn `unverified`: `hoa-dao-xuan/backgrounds/landscape.webp`, `quan-ho-kinh-bac/decorations/sen-bong.webp`. Cả hai sẽ được thay theo phiếu HD và QH.
+- `shared/` chưa có file nào. Chỉ dùng khi ChatGPT xác định một asset dùng chung được cho nhiều mẫu.

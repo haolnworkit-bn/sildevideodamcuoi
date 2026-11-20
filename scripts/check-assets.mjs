@@ -101,7 +101,8 @@ for (const p of images) {
       if (rel.includes("/backgrounds/portrait.webp") && dim[0] / dim[1] > .9) warn("Portrait ratio suspicious: " + rel);
     }
   }
-  if (rel.includes("/") && !rel.startsWith("shared/") && !covered.has(rel)) warn("Image not listed in manifest: " + rel);
+  // mọi ảnh (kể cả shared/) phải có trong manifest của thư mục mình để theo dõi nguồn gốc / giấy phép
+  if (rel.includes("/") && !covered.has(rel)) warn("Image not listed in manifest: " + rel);
   const hash = createHash("sha256").update(b).digest("hex");
   if (hashes.has(hash)) warn("Duplicate bytes: " + hashes.get(hash) + " and " + rel);
   else hashes.set(hash, rel);

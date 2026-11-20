@@ -70,3 +70,19 @@ test("invalid WebP header fails", () => fixture(({ put, run }) => {
   assert.equal(r.status, 1);
   assert.match(r.stderr, /Invalid WebP header/);
 }));
+test("shared assets use their own manifest (templateId \"shared\")", () => fixture(({ put, run }) => {
+  const webp = Buffer.alloc(30);
+  webp.write("RIFF", 0); webp.writeUInt32LE(22, 4); webp.write("WEBP", 8);
+  webp.write("VP8X", 12); webp.writeUInt32LE(10, 16); webp[24] = 1; webp[27] = 1;
+  put("public/assets/shared/particles/petal.webp", webp);
+  let r = run();
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stderr, /Image not listed in manifest: shared\/particles\/petal\.webp/);
+  put("public/assets/shared/manifest.json", JSON.stringify({
+    templateId: "shared", schemaVersion: 1,
+    assets: [{ file: "particles/petal.webp", source: "chatgpt-image", licenseStatus: "unverified", reviewStatus: "visual-qa-pending" }],
+  }));
+  r = run();
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.doesNotMatch(r.stderr, /Image not listed in manifest: shared/);
+}));

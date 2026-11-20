@@ -22,7 +22,7 @@
 | HD-02 | `backgrounds/portrait.webp` | Như HD-01, bố cục dọc | nền | phủ kín | — |
 | HD-03 | `decorations/canh-dao-tren.webp` | Cành đào lớn vươn từ góc trên trái, gốc cành chạm mép trên/trái | back | neo `tl` (0,0), cao ~0.38 / dọc cao ~0.14 | sway nhẹ quanh gốc |
 | HD-04 | `decorations/canh-dao-duoi.webp` | Cành đào từ góc dưới phải, dáng khác HD-03 | back | neo `br` (1,1), cao ~0.34 / dọc cao ~0.16 | sway nhẹ, lệch pha |
-| HD-05 | `ornaments/cum-hoa-dao.webp` | 1 bông đào lớn + 2 bông nhỏ hai bên, nằm ngang, làm hoạ tiết phân cách | hoạ tiết | hiển thị rộng ~260px phía trên "Lời cảm ơn" | — |
+| HD-05 | `decorations/ornament-cum-hoa-dao.webp` | 1 bông đào lớn + 2 bông nhỏ hai bên, nằm ngang, làm hoạ tiết phân cách | hoạ tiết | hiển thị rộng ~260px phía trên "Lời cảm ơn" | — |
 | HD-06 | `decorations/hoa-goc-khung.webp` | Cụm 2 bông đào + nụ, đặt ở góc dưới trái khung ảnh cưới | khung ảnh | hiển thị ~160×120px, đè lên viền khung | — |
 | HD-07 | `particles/canh-dao-01.webp` … `-03.webp` | 3 cánh đào khác dáng và độ hồng | rơi | 128–256px | rơi + xoay (code) |
 | HD-08 | `particles/bong-dao-01.webp` | Một bông đào nguyên (rơi hiếm) | rơi | 192–256px | rơi + xoay (code) |

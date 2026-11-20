@@ -40,7 +40,7 @@ Màu của mẫu: đỏ son `#b3261e` (tiêu đề/tên), chàm `#1f3a5f`, vàng
 | QH-06 | `decorations/ao-sen-ngang.webp` | Dải ao sen: nước chàm + lá sen nằm, mép trên mờ dần trong suốt | back | neo `bc`, rộng ~0.95, cao ~0.22 | bob rất nhẹ |
 | QH-07 | `decorations/ao-sen-doc.webp` | Như QH-06 cho khổ dọc (dải đáy ~320px) | back | neo `bc`, rộng ~0.92 | bob rất nhẹ |
 | QH-08 | `decorations/sen-bong-01.webp`, `-02`, `-03` | Bông sen nở, nụ sen, đài sen, có cuống chạm mép dưới; cùng phong cách với QH-03/04 | back | 3–5 bông đứng trong ao, cao ~0.12–0.2 | sway + breathe |
-| QH-09 | `ornaments/non-quai-thao.webp` | Nón quai thao nhỏ, có quai thao vàng, nhìn chính diện hơi nghiêng | hoạ tiết | hiển thị rộng ~220px phía trên tiêu đề "Lời cảm ơn" | — |
+| QH-09 | `decorations/ornament-non-quai-thao.webp` | Nón quai thao nhỏ, có quai thao vàng, nhìn chính diện hơi nghiêng | hoạ tiết | hiển thị rộng ~220px phía trên tiêu đề "Lời cảm ơn" | — |
 | QH-10 | `particles/canh-sen-01.webp`, `-02`; `particles/la-tre-01.webp`, `-02` | Cánh sen hồng, lá tre vàng/đỏ | rơi | 128–256px | rơi + xoay (code) |
 
 Ghi chú:

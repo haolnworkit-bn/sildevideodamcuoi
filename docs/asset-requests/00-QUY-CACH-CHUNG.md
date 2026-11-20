@@ -72,9 +72,8 @@ Hai khổ: **ngang 16:9 = 1920×1080** và **dọc 9:16 = 1080×1920**.
 | Nền ngang | `backgrounds/landscape.webp` | WebP, không alpha | đúng 1920×1080 | ≤ 400 KB |
 | Nền dọc | `backgrounds/portrait.webp` | WebP, không alpha | đúng 1080×1920 | ≤ 400 KB |
 | Trang trí (back/front) | `decorations/` | WebP có alpha (hoặc PNG) | cạnh dài ≈ 2× cỡ hiển thị lớn nhất, ≤ 1600px | ≤ 300 KB |
-| Hoạ tiết phân cách | `ornaments/` | WebP alpha | rộng ≈ 2× cỡ hiển thị | ≤ 150 KB |
+| Hoạ tiết phân cách | `decorations/ornament-<tên>.webp` | WebP alpha | rộng ≈ 2× cỡ hiển thị | ≤ 150 KB |
 | Ảnh rơi | `particles/` | WebP alpha | 128–256 px, vật ở chính giữa | ≤ 20 KB |
-| Chất liệu lặp | `textures/` | WebP | ghi rõ có lặp (tile) liền mép không | ≤ 300 KB |
 
 Yêu cầu bắt buộc:
 - **Nền trong suốt sạch**: không viền trắng/xám, không quầng, không nền ô cờ giả. Cắt sát vật (chừa ≤ 8px).
@@ -100,7 +99,7 @@ Gửi kèm bảng sau và một đoạn JSON cho `manifest.json`:
 {
   "file": "decorations/vd.webp",
   "source": "chatgpt-image",
-  "licenseStatus": "pending-owner-confirmation",
+  "licenseStatus": "unverified",
   "reviewStatus": "visual-qa-pending",
   "origin": "ChatGPT Image — <tên mẫu> <năm>",
   "originalFileName": "<tên file gốc>",
@@ -111,7 +110,9 @@ Gửi kèm bảng sau và một đoạn JSON cho `manifest.json`:
 }
 ```
 
-`licenseStatus` chỉ ghi `commercial-use` khi **chủ dự án xác nhận**. Claude không tự đổi trạng thái này.
+`licenseStatus` chỉ nhận `unverified` | `commercial-use` | `restricted`. Mặc định `unverified`; chỉ đổi sang `commercial-use` khi **chủ dự án xác nhận**. Claude không tự đổi trạng thái này.
+
+Chỉ có **3 thư mục** cho mỗi mẫu: `backgrounds/`, `decorations/`, `particles/` (checker từ chối thư mục khác). Hoạ tiết phân cách, khung trang trí… đều vào `decorations/`.
 
 ## 5. Sau khi bàn giao, Claude sẽ
 
