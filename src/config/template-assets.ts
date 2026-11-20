@@ -90,12 +90,18 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
   },
 
   /** Bông sen màu nước đứng trong ao, đung đưa và "thở" nhẹ */
-  /** Quan Họ — bản thử màu nước: nền ngang là ảnh toàn cảnh tạm; khổ dọc vẫn dùng nền code của mẫu. */
+  /** Quan Họ — màu nước: nền vẽ liền riêng ngang/dọc (quy cách §6-D), chỉ tách cánh sen rơi. */
   "quan-ho-kinh-bac": {
     background: {
       landscape: "/assets/quan-ho-kinh-bac/backgrounds/landscape.webp",
+      portrait: "/assets/quan-ho-kinh-bac/backgrounds/portrait.webp",
       zoom: 0.01,
     },
+    falling: [
+      { src: "/assets/quan-ho-kinh-bac/particles/canh-sen-01.webp", count: 4, size: [0.02, 0.036], drift: 50, loops: 1, seed: 41 },
+      { src: "/assets/quan-ho-kinh-bac/particles/canh-sen-02.webp", count: 4, size: [0.02, 0.036], drift: 44, loops: 1, seed: 67 },
+      { src: "/assets/quan-ho-kinh-bac/particles/canh-sen-03.webp", count: 3, size: [0.022, 0.04], drift: 38, loops: 1, seed: 103 },
+    ],
   },
 
   /** Hồng Phượng 2026: nền riêng ngang/dọc và artwork màu nước. */
