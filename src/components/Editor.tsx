@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FEATURES, formatVnd } from "@/config/features";
 import { computeEntitlement, isUnlocked, startCheckout } from "@/lib/billing/entitlements";
+import { createProjectBackup, restoreProjectBackup } from "@/lib/backup";
 import { loadDraft, saveDraft, takeLegacyPhoto } from "@/lib/draft";
 import { isEventType } from "@/lib/events";
 import { decodeAudio, detectExportCapability, exportPoster, exportVideo, type ExportCapability } from "@/lib/export/video";
@@ -72,6 +73,16 @@ export default function Editor() {
   const [target, setTarget] = useState(20);
   const [presenting, setPresenting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
+  const resourceRef = useRef<{ imgs: Record<string, LoadedPhoto>; music: string | null; exportUrl: string | null }>({ imgs: {}, music: null, exportUrl: null });
+  resourceRef.current = { imgs, music: music?.url ?? null, exportUrl: exp.kind === "done" ? exp.url : null };
+  useEffect(() => () => {
+    abortRef.current?.abort();
+    const r = resourceRef.current;
+    Object.values(r.imgs).forEach(p => URL.revokeObjectURL(p.url));
+    if (r.music) URL.revokeObjectURL(r.music);
+    if (r.exportUrl) URL.revokeObjectURL(r.exportUrl);
+  }, []);
   // Khả năng xuất của trình duyệt (MP4 nhanh / WebM thời gian thực / có nhạc không) — kiểm tra khi mở hộp thoại xuất
   const [cap, setCap] = useState<ExportCapability | null>(null);
   const aspect = data?.aspect;
@@ -201,11 +212,40 @@ export default function Editor() {
   };
   const musicOn = !!music && data.music.enabled;
 
+  const saveBackup = async () => {
+    try {
+      const blob = await createProjectBackup(data);
+      download(blob, `${fileName}-backup.json`);
+    } catch (err) { alert((err as Error).message || "Sao lưu thất bại"); }
+  };
+  const loadBackup = async (file: File) => {
+    try {
+      const restored = await restoreProjectBackup(file);
+      const next: Record<string, LoadedPhoto> = {};
+      for (const photo of restored.photos) {
+        const b = await getBlob(photo.id);
+        if (!b) throw new Error("Không tìm thấy ảnh sau khi phục hồi");
+        const url = URL.createObjectURL(b);
+        try { next[photo.id] = { url, img: await loadImage(url) }; }
+        catch (err) { URL.revokeObjectURL(url); throw err; }
+      }
+      const song = await getBlob(musicKey(restored.id));
+      Object.values(imgs).forEach(p => URL.revokeObjectURL(p.url));
+      if (music) URL.revokeObjectURL(music.url);
+      setImgs(next);
+      setMusic(song ? { blob: song, url: URL.createObjectURL(song) } : null);
+      setData(restored);
+      setUnlocked(false);
+      setExp({ kind: "idle" });
+    } catch (err) { alert((err as Error).message || "Phục hồi thất bại"); }
+  };
+
   const newProject = () => {
     if (!confirm("Tạo video mới? Nội dung, ảnh và nhạc hiện tại sẽ bị xoá.")) return;
     data.photos.forEach((m) => deleteBlob(m.id));
     deleteBlob(musicKey(data.id));
     Object.values(imgs).forEach((p) => URL.revokeObjectURL(p.url));
+    if (music) URL.revokeObjectURL(music.url);
     setImgs({});
     setMusic(null);
     setData({ ...createDefaultProject(data.templateId, data.eventType), aspect: data.aspect });
@@ -310,6 +350,9 @@ export default function Editor() {
           ))}
         </div>
         <div className="topbar-actions">
+          <input ref={backupInputRef} type="file" accept=".json,application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) await loadBackup(f); }} />
+          <button className="btn ghost hide-sm" onClick={saveBackup} title="Lưu cả nội dung, ảnh và nhạc">Sao lưu</button>
+          <button className="btn ghost hide-sm" onClick={() => backupInputRef.current?.click()} title="Nhập tệp sao lưu">Phục hồi</button>
           <button className="btn ghost hide-sm" onClick={newProject}>
             Video mới
           </button>
