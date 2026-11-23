@@ -109,6 +109,10 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-23 (Hoa Đào Xuân màu nước, nhánh `design/hoa-dao-xuan`, PR): nền ngang = ảnh ChatGPT "Nền Mùa Xuân Làng Quê Việt Nam-5" (chủ dự án chọn,
+  có alpha một phần → flatten màu giấy 244,224,197), nền dọc = bản 2, rơi = canh-dao-01/02 + bong-dao-01 (bỏ hạt code). backdrop quầng tông giấy (chỉ ngang).
+  Ảnh dự phòng (bản 1,3,4,6, v1) ở `_inbox/hoa-dao-xuan/`. Còn vẽ code: ornament 3 bông + hoa góc khung vòm. Định hướng dài hạn: `docs/DINH-HUONG-PHAT-TRIEN.md`.
+  BẪY: KHÔNG `git checkout -- <asset>` khi asset mới chưa commit (đã mất 1 lần, phục hồi từ cache Chrome headless `prof/Default/Cache`).
 - 2026-11-20 (Số cảnh 1/2/3, nhánh `feat/scene-count`, PR): `scenes.intro` mới; `textSceneCount`/`scenesForCount` trong timeline.ts;
   1 cảnh = chỉ Tên & ngày, dài `SINGLE_SCENE`=8s, runScenes giữ chữ đứng yên (v=1, lt=SETTLED) để lặp không nháy. UI: nút "1/2/3 cảnh" ở thẻ Nội dung.
   /dev/frames thêm `&scenes=1|2|3`. Chưa thử xuất MP4 chế độ 1 cảnh. ChatGPT đang làm Hoa Đào (nền vẽ liền, bản sắc Tết, khác Hồng Phượng).

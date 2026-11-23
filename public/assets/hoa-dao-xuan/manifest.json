@@ -1,14 +1,92 @@
 {
   "templateId": "hoa-dao-xuan",
   "schemaVersion": 1,
-  "notes": "Asset hiện hữu được chuyển đường dẫn nhưng giữ nguyên nội dung. Chưa có chứng từ về nguồn gốc, giấy phép hoặc kiểm duyệt mỹ thuật.",
+  "notes": "Màu nước Tết miền Bắc (2026-11-23): nền ngang = bản 5 'Nền Mùa Xuân Làng Quê Việt Nam', nền dọc = bản 2 'Khung hoa đào mùa xuân thủy mặc' (cùng tông vàng ấm, chủ dự án chọn). Nền ngang có alpha một phần → lót màu giấy (244,224,197) rồi phóng 1672→1920; nền dọc phóng 941×1672→1080×1920. Cánh/bông rơi: bản 8, 9 (cánh sen cũ canh-dao-03 đã bỏ).",
   "assets": [
     {
       "file": "backgrounds/landscape.webp",
-      "source": "unknown",
+      "source": "chatgpt-image",
       "licenseStatus": "unverified",
-      "reviewStatus": "legacy-needs-audit",
-      "previousPath": "public/assets/hoa-dao-xuan/background.webp"
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — nền ngang màu nước làng quê mùa xuân (bản 5), flatten trên màu giấy + upscale lanczos3",
+      "originalFileName": "Nền Mùa Xuân Làng Quê Việt Nam-5.png",
+      "nativeDimensions": [
+        1672,
+        941
+      ],
+      "outputDimensions": [
+        1920,
+        1080
+      ],
+      "alpha": false
+    },
+    {
+      "file": "backgrounds/portrait.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — nền dọc màu nước hoa đào làng quê (bản 2), upscale lanczos3",
+      "originalFileName": "Khung hoa đào mùa xuân thủy mặc-2.png",
+      "nativeDimensions": [
+        941,
+        1672
+      ],
+      "outputDimensions": [
+        1080,
+        1920
+      ],
+      "alpha": false
+    },
+    {
+      "file": "particles/canh-dao-01.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — HD-07/08 canh-dao-01 (ChatGPT tự thu về 256px)",
+      "originalFileName": "a_single_isolated_watercolor_style_pink_flower_pet.png",
+      "nativeDimensions": [
+        1536,
+        1024
+      ],
+      "outputDimensions": [
+        240,
+        214
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/canh-dao-02.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — cánh hoa đào màu nước (bản 8), cắt sát + thu nhỏ",
+      "originalFileName": "Cánh hoa hồng đào màu nước-8.png",
+      "nativeDimensions": [
+        1536,
+        1024
+      ],
+      "outputDimensions": [
+        320,
+        287
+      ],
+      "alpha": true
+    },
+    {
+      "file": "particles/bong-dao-01.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — bông đào màu nước (bản 9), cắt sát + thu nhỏ",
+      "originalFileName": "Hoa đào hồng watercolor tinh tế-9.png",
+      "nativeDimensions": [
+        1536,
+        1024
+      ],
+      "outputDimensions": [
+        320,
+        315
+      ],
+      "alpha": true
     }
   ]
 }

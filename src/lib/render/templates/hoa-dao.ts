@@ -1,12 +1,10 @@
-import { TAU, archPath, drawPhoto, makeLoopParticles, particleAt, particlesFor, radialGlow } from "../helpers";
+import { TAU, archPath, drawPhoto, radialGlow } from "../helpers";
 import type { RenderContext, VideoTemplate } from "../types";
 
 const ROSE = "#b0385a";
 const INK = "#6b2d3c";
 const SOFT = "#c46a82";
-const PETAL_COLORS = ["#f7b6c2", "#f39bb0", "#fbd0d8", "#ee8ea4"];
 
-const petals = makeLoopParticles(40, 11, { minSize: 14, maxSize: 30, drift: 180 });
 
 function petalPath(ctx: CanvasRenderingContext2D, s: number) {
   ctx.beginPath();
@@ -138,26 +136,19 @@ export const hoaDao: VideoTemplate = {
     ctx.restore();
   },
 
-  foreground(rc) {
-    const { ctx, W, H, t, D } = rc;
-    const u = t / D;
-    for (const p of particlesFor(rc, petals)) {
-      const q = particleAt(p, u, W, H, 60, 1);
-      ctx.save();
-      ctx.translate(q.x, q.y);
-      ctx.globalAlpha *= 0.88;
-      if (p.pick > 0.88) {
-        drawBlossom(ctx, 0, 0, p.size * 0.9, q.rot);
-      } else {
-        ctx.rotate(q.rot);
-        ctx.scale(0.35 + 0.65 * Math.abs(q.flip), 1);
-        ctx.fillStyle = PETAL_COLORS[Math.floor(p.pick * PETAL_COLORS.length) % PETAL_COLORS.length];
-        petalPath(ctx, p.size);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
+  /** Nền ngang màu nước có cành đào vươn tới gần giữa khung → quầng giấy ngà mờ sau khối chữ (khổ dọc vẫn nền code) */
+  backdrop(rc) {
+    if (rc.portrait) return;
+    const { ctx, W, H } = rc;
+    ctx.save();
+    ctx.translate(W * 0.54, H * 0.42);
+    ctx.scale(1, 0.6);
+    // cùng tông giấy của nền (≈ 244,224,197) để không thành vệt nhạt; chỉ sáng hơn chút cho chữ nổi
+    radialGlow(ctx, 0, 0, W * 0.4, "rgba(248,233,210,0.55)");
+    ctx.restore();
   },
+
+  // Cánh đào/bông đào rơi là ảnh (template-assets `falling`), không vẽ hạt bằng code nữa.
 
   ornament(rc, cx, cy) {
     drawBlossom(rc.ctx, cx, cy, 44, 0.3);

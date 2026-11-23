@@ -84,9 +84,18 @@ export interface TemplateAssets {
 }
 
 export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
-  /** Thử nghiệm: ảnh nền màu nước hoa đào (chỉ có bản ngang). Bản dọc: còn dùng nền vẽ bằng code. */
+  /** Hoa Đào Xuân — màu nước Tết miền Bắc: nền vẽ liền riêng ngang/dọc, cánh đào + bông đào rơi. */
   "hoa-dao-xuan": {
-    background: { landscape: "/assets/hoa-dao-xuan/backgrounds/landscape.webp", zoom: 0.02 },
+    background: {
+      landscape: "/assets/hoa-dao-xuan/backgrounds/landscape.webp",
+      portrait: "/assets/hoa-dao-xuan/backgrounds/portrait.webp",
+      zoom: 0.015,
+    },
+    falling: [
+      { src: "/assets/hoa-dao-xuan/particles/canh-dao-01.webp", count: 6, size: [0.016, 0.03], drift: 60, loops: 1, seed: 11 },
+      { src: "/assets/hoa-dao-xuan/particles/canh-dao-02.webp", count: 6, size: [0.016, 0.03], drift: 50, loops: 1, seed: 29 },
+      { src: "/assets/hoa-dao-xuan/particles/bong-dao-01.webp", count: 1, size: [0.03, 0.04], drift: 36, loops: 1, seed: 87 },
+    ],
   },
 
   /** Bông sen màu nước đứng trong ao, đung đưa và "thở" nhẹ */
