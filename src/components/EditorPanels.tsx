@@ -5,7 +5,7 @@ import { FEATURES } from "@/config/features";
 import { EVENT_LIST, EVENT_TYPES, type EventTypeId } from "@/lib/events";
 import { BODY_FONTS, FONT_LIB, TITLE_FONTS, ensureFontsLoaded } from "@/lib/fonts";
 import { MUSIC_LIBRARY, buildLibraryTrack } from "@/lib/musicLibrary";
-import { MAX_PHOTOS, dateInfo, givenName, type ProjectData, type StyleOverrides } from "@/lib/project";
+import { MAX_PHOTOS, TEXT_LIMITS, dateInfo, givenName, type ProjectData, type StyleOverrides } from "@/lib/project";
 import { checkMessageFit } from "@/lib/render/engine";
 import { scenesForCount, textSceneCount } from "@/lib/render/timeline";
 import { COLOR_TAGS, TEMPLATES, getTemplate } from "@/lib/render/templates";
@@ -15,6 +15,8 @@ import TemplateThumb from "./TemplateThumb";
 export type Patch = (p: Partial<ProjectData>) => void;
 
 /** Đổi loại lễ; nếu đang dùng lời cảm ơn mẫu thì đổi luôn sang lời mẫu của loại mới */
+const NAME_NOTE = "tên dài sẽ nhỏ chữ hoặc xuống dòng; có thể chọn \"Tên ở cảnh lớn\" = tên gọi";
+
 export function switchEvent(d: ProjectData, ev: EventTypeId): ProjectData {
   if (d.eventType === ev) return d;
   const usingDefault = d.message.trim() === EVENT_TYPES[d.eventType].defaultMessage;
@@ -43,7 +45,7 @@ export function TemplatesPanel({ data, patch, photos }: { data: ProjectData; pat
         <p className="hint">Chọn mẫu khác thì nội dung, ảnh và tuỳ chỉnh vẫn được giữ nguyên.</p>
       </section>
       <section className="field-group">
-        <div className="tpl-grid">
+        <div className={`tpl-grid ${data.aspect === "9:16" ? "portrait" : ""}`}>
           {list.map((t) => (
             <button
               key={t.id}
@@ -51,7 +53,7 @@ export function TemplatesPanel({ data, patch, photos }: { data: ProjectData; pat
               onClick={() => patch({ templateId: t.id })}
               title={t.description}
             >
-              <TemplateThumb template={t} eventType={data.eventType} data={data} photos={photos.slice(0, 1)} />
+              <TemplateThumb template={t} eventType={data.eventType} data={data} photos={photos.slice(0, 1)} aspect={data.aspect} />
               <span>
                 {t.name}
                 {FEATURES.monetization && t.tier === "premium" && <em className="badge">Premium</em>}
@@ -65,6 +67,17 @@ export function TemplatesPanel({ data, patch, photos }: { data: ProjectData; pat
 }
 
 // ---------------------------------------------------------------- Nội dung
+
+/** Đếm ký tự khi ô nhập đã dài (từ ngưỡng `soft`); `note` giải thích chữ sẽ bị thu nhỏ/xuống dòng */
+function LenHint({ value, limit, note }: { value: string; limit: { soft: number; max: number }; note: string }) {
+  const n = value.trim().length;
+  if (n < limit.soft) return null;
+  return (
+    <small className={`hint ${n >= limit.max ? "hint-limit" : "hint-long"}`}>
+      {n}/{limit.max} ký tự · {n >= limit.max ? "đã tới giới hạn" : note}
+    </small>
+  );
+}
 
 export function ContentPanel({ data, patch, setData, photoCount }: { data: ProjectData; patch: Patch; setData: (d: ProjectData) => void; photoCount: number }) {
   const info = dateInfo(data);
@@ -94,11 +107,13 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
         </div>
         <label className="field">
           <span>Tiêu đề hiển thị</span>
-          <input value={data.title} placeholder={EVENT_TYPES[data.eventType].title} onChange={(e) => patch({ title: e.target.value })} />
+          <input value={data.title} maxLength={TEXT_LIMITS.title.max} placeholder={EVENT_TYPES[data.eventType].title} onChange={(e) => patch({ title: e.target.value })} />
+          <LenHint value={data.title} limit={TEXT_LIMITS.title} note="tiêu đề dài sẽ được thu nhỏ" />
         </label>
         <label className="field">
           <span>Lời chào mở đầu</span>
-          <input value={data.greeting} placeholder="Để trống nếu không muốn hiện" onChange={(e) => patch({ greeting: e.target.value })} />
+          <input value={data.greeting} maxLength={TEXT_LIMITS.greeting.max} placeholder="Để trống nếu không muốn hiện" onChange={(e) => patch({ greeting: e.target.value })} />
+          <LenHint value={data.greeting} limit={TEXT_LIMITS.greeting} note="lời chào dài sẽ xuống 2 dòng" />
         </label>
       </section>
 
@@ -106,11 +121,13 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
         <h3>Cô dâu & chú rể</h3>
         <label className="field">
           <span>Họ tên chú rể</span>
-          <input value={data.groomName} onChange={(e) => patch({ groomName: e.target.value })} />
+          <input value={data.groomName} maxLength={TEXT_LIMITS.name.max} onChange={(e) => patch({ groomName: e.target.value })} />
+          <LenHint value={data.groomName} limit={TEXT_LIMITS.name} note={NAME_NOTE} />
         </label>
         <label className="field">
           <span>Họ tên cô dâu</span>
-          <input value={data.brideName} onChange={(e) => patch({ brideName: e.target.value })} />
+          <input value={data.brideName} maxLength={TEXT_LIMITS.name.max} onChange={(e) => patch({ brideName: e.target.value })} />
+          <LenHint value={data.brideName} limit={TEXT_LIMITS.name} note={NAME_NOTE} />
         </label>
         <div className="row even">
           <label className="field">
@@ -158,7 +175,8 @@ export function ContentPanel({ data, patch, setData, photoCount }: { data: Proje
         </label>
         <label className="field">
           <span>Địa điểm</span>
-          <input value={data.venue} placeholder="VD: Tư gia nhà gái" onChange={(e) => patch({ venue: e.target.value })} />
+          <input value={data.venue} maxLength={TEXT_LIMITS.venue.max} placeholder="VD: Tư gia nhà gái" onChange={(e) => patch({ venue: e.target.value })} />
+          <LenHint value={data.venue} limit={TEXT_LIMITS.venue} note="địa chỉ dài sẽ xuống dòng, nên ghi gọn" />
         </label>
       </section>
 

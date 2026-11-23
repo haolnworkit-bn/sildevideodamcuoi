@@ -66,6 +66,17 @@ export interface ProjectData {
 
 export const MAX_PHOTOS = 6;
 
+/**
+ * Giới hạn độ dài ô nhập. `max` = mức dài nhất đã qua /dev/layout (bộ tên "xlong", 0 lỗi) → ô nhập chặn cứng;
+ * `soft` = từ đây editor nhắc chữ sẽ nhỏ/xuống dòng. Nâng `max` thì phải thêm bộ thử dài hơn vào LayoutAudit.
+ */
+export const TEXT_LIMITS = {
+  name: { soft: 22, max: 30 },
+  greeting: { soft: 30, max: 40 },
+  venue: { soft: 60, max: 100 },
+  title: { soft: 24, max: 32 },
+} as const;
+
 export function uid(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2) + Date.now().toString(36);

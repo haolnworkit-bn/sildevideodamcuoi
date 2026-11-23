@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { FEATURES } from "@/config/features";
 import { EVENT_LIST, type EventTypeId } from "@/lib/events";
+import type { Aspect } from "@/lib/project";
 import { COLOR_TAGS, TEMPLATES } from "@/lib/render/templates";
 import type { ColorTag } from "@/lib/render/types";
 import TemplateThumb from "./TemplateThumb";
@@ -11,6 +12,7 @@ import TemplateThumb from "./TemplateThumb";
 export default function Gallery() {
   const [ev, setEv] = useState<EventTypeId>("dam-ngo");
   const [color, setColor] = useState<ColorTag | null>(null);
+  const [aspect, setAspect] = useState<Aspect>("16:9");
   const list = color ? TEMPLATES.filter((t) => t.colors.includes(color)) : TEMPLATES;
   return (
     <section className="gallery">
@@ -32,10 +34,18 @@ export default function Gallery() {
           </button>
         ))}
       </div>
-      <div className="gallery-grid">
+      <div className="chips center" style={{ marginTop: 10 }}>
+        <span className="hint">Khung hình:</span>
+        {(["16:9", "9:16"] as const).map((a) => (
+          <button key={a} className={`chip small ${aspect === a ? "on" : ""}`} onClick={() => setAspect(a)}>
+            {a === "16:9" ? "Ngang 16:9 (TV, máy chiếu)" : "Dọc 9:16 (màn LED đứng, điện thoại)"}
+          </button>
+        ))}
+      </div>
+      <div className={`gallery-grid ${aspect === "9:16" ? "portrait" : ""}`}>
         {list.map((t) => (
-          <Link key={t.id} href={`/editor?template=${t.id}&event=${ev}`} className="card">
-            <TemplateThumb template={t} eventType={ev} />
+          <Link key={t.id} href={`/editor?template=${t.id}&event=${ev}&aspect=${aspect}`} className="card">
+            <TemplateThumb template={t} eventType={ev} aspect={aspect} />
             <div className="card-body">
               <strong>
                 {t.name}

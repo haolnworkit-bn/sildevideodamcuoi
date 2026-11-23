@@ -58,9 +58,8 @@ Mỗi đám cưới gửi thiệp cho 200–500 người. Trang thiệp gồm:
 ## 8. Việc nhỏ còn tồn (giai đoạn 1)
 
 - Chụp kiểm tra và sửa editor ở màn hình điện thoại (chưa từng kiểm).
-- Thử xuất MP4 ở chế độ 1 cảnh.
-- Dọn code vẽ Đông Hồ thừa trong `quan-ho.ts` (đã bị ảnh nền che hết).
-- Giới hạn độ dài tên và địa chỉ, có cảnh báo trong editor.
-- Lưu và mở lại dự án bằng file (hiện dữ liệu chỉ nằm trong trình duyệt).
-- Ảnh thu nhỏ trong thư viện mẫu theo đúng tỉ lệ đang chọn.
 - WebM (nhánh dự phòng) chưa ghi thời lượng trong header.
+
+Đã xong (2026-11-23, nhánh `chore/stage1-leftovers`): xuất MP4 chế độ 1 cảnh (8s/vòng, đã đo); dọn code Đông Hồ trong `quan-ho.ts`;
+giới hạn độ dài tiêu đề/lời chào/tên/địa chỉ có cảnh báo (`TEXT_LIMITS`); ảnh thu nhỏ theo tỉ lệ (editor + nút chọn khung ở trang chủ).
+Lưu/mở dự án bằng file: đã có sẵn (nút Sao lưu / Phục hồi trong editor).
