@@ -110,6 +110,11 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-25 (luồng chiếu TV 16:9 — chủ dự án ưu tiên hơn editor điện thoại, nhánh `feat/tv-presenter` xếp chồng trên `chore/stage1-leftovers`, PR):
+  Presenter: `screen.isExtended` → bảng chọn "Chiếu lên TV / màn hình này" (Window Management API `getScreenDetails` + `requestFullscreen({screen})`;
+  hộp quyền làm mất lượt bấm → báo bấm lại); chờ `ensureFontsLoaded` (tối đa 6s) mới chiếu; vẽ 30 hình/giây, t = frame/30 khớp MP4; phím M tắt tiếng.
+  Hộp thoại xuất: khổ 9:16 → cảnh báo viền đen trên TV + nút chuyển 16:9. Đã chụp headless cả 2 nhánh (giả lập isExtended).
+  CHƯA thử với TV/màn hình thứ 2 thật (quyền window-management, chọn đúng màn).
 - 2026-11-23 (việc nhỏ giai đoạn 1, nhánh `chore/stage1-leftovers`, PR): `quan-ho.ts` bỏ toàn bộ code vẽ Đông Hồ (586 → ~115 dòng; nền dự phòng = gradient giấy kem),
   sửa mô tả/swatch/màu rạp thành hồng–xanh lá–kem. `TEXT_LIMITS` trong project.ts (max = mức đã qua /dev/layout "xlong") + `LenHint` trong EditorPanels.
   `TemplateThumb` nhận `aspect`; lưới mẫu editor 3 cột khi 9:16; trang chủ có nút Ngang/Dọc, link editor mang `&aspect=`; editor đọc `?aspect=`.
