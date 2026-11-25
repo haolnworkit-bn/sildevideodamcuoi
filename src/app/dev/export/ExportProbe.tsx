@@ -6,7 +6,7 @@ import { FONT_LIB, ensureFontsLoaded } from "@/lib/fonts";
 import { createDefaultProject, type Aspect } from "@/lib/project";
 import { getTemplate } from "@/lib/render/templates";
 import type { Photo } from "@/lib/render/types";
-import { computeTimeline } from "@/lib/render/timeline";
+import { computeTimeline, scenesForCount } from "@/lib/render/timeline";
 
 /** Nhạc thử: hợp âm sin 4 giây */
 async function synthAudio(): Promise<AudioBuffer> {
@@ -39,7 +39,13 @@ export default function ExportProbe() {
     const q = new URLSearchParams(location.search);
     const tpl = getTemplate(q.get("template"));
     const loops = Number(q.get("loops") || 1);
-    const data = { ...createDefaultProject(tpl.id, "dam-ngo"), aspect: (q.get("aspect") as Aspect) || "16:9" };
+    const base = createDefaultProject(tpl.id, "dam-ngo");
+    const data = {
+      ...base,
+      aspect: (q.get("aspect") as Aspect) || "16:9",
+      // &scenes=1|2|3 : số cảnh chữ (1 = chỉ Tên & ngày)
+      ...(q.get("scenes") ? { scenes: scenesForCount(base.scenes, Number(q.get("scenes")) as 1 | 2 | 3) } : {}),
+    };
     const photos = Array.from({ length: Number(q.get("photos") || 0) }, (_, i) => fakePhoto(i * 70));
     const t0 = performance.now();
     const heap = () => (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? null;

@@ -61,6 +61,7 @@ src/app/dev/frames, dev/export  trang kiểm thử (404 trên production)
   (đăng ký khi import `templates/index.ts`; `ensureFontsLoaded()` đợi ảnh tải xong; thiếu file → bỏ qua lớp). Hướng dẫn cho người dùng: `public/assets/README.md`.
   Nền ảnh cần RIÊNG bản ngang & dọc (thiếu hướng nào dùng nền code của mẫu). Ảnh nguồn: tự tạo bằng AI/ảnh có giấy phép; KHÔNG dùng asset của cinelove.
 - Mẫu đang dùng ảnh: hoa-dao-xuan (nền ngang), quan-ho-kinh-bac (sen), **hong-phuong** [ĐÃ LÀM LẠI theo phương án A 2026-11-20 — xem docs/templates/hong-phuong.md; mô tả cũ dưới đây đã lỗi thời] (mẫu ăn hỏi: nền hồng đào + lồng đèn góc trên trái + sen đôi góc dưới phải + chữ 囍 lớn, mờ, chìm ở GIỮA khung phía sau chữ [vẽ bằng font trong `hong-phuong.ts` qua hook mới `backdrop(rc)` của VideoTemplate — gọi SAU ảnh nền, TRƯỚC lớp back và các cảnh chữ, nên ảnh trang trí đè lên viền/chữ chìm chứ không bị đè; cùng hook này vẽ viền khung 2 nét mảnh hồng cách mép 3.5% cạnh ngắn; ở khổ ngang viền được làm mờ (destination-out trên canvas phụ) tại 2 cụm hoa đào đã nằm sẵn trong `nen.webp` để hoa nhìn như nằm TRÊN viền — toạ độ `hide(...)` gắn cứng theo ảnh nền, đổi ảnh nền thì phải chỉnh lại; cách đúng là tách cụm hoa thành PNG riêng nền trong suốt; không phải hình]; ảnh trong `public/assets/hong-phuong/`; khung dọc dùng chính nền ngang cắt giữa — nên bổ sung nền dọc riêng). `hong-phuong/long-den.webp` là bản đã TÁCH NỀN XÁM từ `quan-ho-kinh-bac/long_den.webp` của người dùng (bằng sharp: xoá màu 209,209,209 + khử viền). File thừa chưa dùng: `hong-phuong/phuong-hoang.webp`, `dai-lua-hong.webp` (vẫn dùng làm ornament "Lời cảm ơn"), `sen-hong.webp`, `sen-nu.webp`; `hoa_sen_hong_1.webp` trùng `hoa_sen_hong`. Các phần còn vẽ bằng code (liền anh/chị, tre, ao sen của quan-ho; toàn bộ mẫu khác) sẽ thay dần khi có ảnh.
+- (quan-ho-kinh-bac: code vẽ liền anh/chị, tre, ao sen ĐÃ XOÁ 2026-11-23 — mô tả cũ ở trên đã lỗi thời.)
 - 11 mẫu gốc: hoa-dao-xuan(frame, vòm), trau-cau(frame + dải lụa titleBacking), hy-su-do-vang(emblem huy chương 囍), sen-ngoc(faded, emblem hoa sen khi không ảnh),
   mau-don(frame tròn), tu-dang(frame vòm), cam-tu-cau(frame bo góc), thu-vang(frame polaroid), ngoc-trai(caps, emblem vòng ngọc trai/monogram),
   thanh-lich(caps, fullbleed), hoang-kim(caps, emblem monogram/khung vàng).
@@ -109,6 +110,12 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-23 (việc nhỏ giai đoạn 1, nhánh `chore/stage1-leftovers`, PR): `quan-ho.ts` bỏ toàn bộ code vẽ Đông Hồ (586 → ~115 dòng; nền dự phòng = gradient giấy kem),
+  sửa mô tả/swatch/màu rạp thành hồng–xanh lá–kem. `TEXT_LIMITS` trong project.ts (max = mức đã qua /dev/layout "xlong") + `LenHint` trong EditorPanels.
+  `TemplateThumb` nhận `aspect`; lưới mẫu editor 3 cột khi 9:16; trang chủ có nút Ngang/Dọc, link editor mang `&aspect=`; editor đọc `?aspect=`.
+  /dev/export nhận `&scenes=1|2|3`; đo MP4 1 cảnh: 3 vòng = 24.00s (16:9), 2 vòng 9:16 = 16.00s, có nhạc. /dev/layout 3 mẫu Đợt 1: 0 lỗi.
+  Chưa chạy `npm run build` (dev server người dùng đang chạy cổng 8080). Chụp có thao tác: script `shotjs.mjs` (scratchpad) đọc JS từ FILE —
+  PowerShell 5.1 nuốt dấu `"` khi truyền tham số cho node.
 - 2026-11-23 (Hoa Đào Xuân màu nước, nhánh `design/hoa-dao-xuan`, PR): nền ngang = ảnh ChatGPT "Nền Mùa Xuân Làng Quê Việt Nam-5" (chủ dự án chọn,
   có alpha một phần → flatten màu giấy 244,224,197), nền dọc = bản 2, rơi = canh-dao-01/02 + bong-dao-01 (bỏ hạt code). backdrop quầng tông giấy (chỉ ngang).
   Ảnh dự phòng (bản 1,3,4,6, v1) ở `_inbox/hoa-dao-xuan/`. Còn vẽ code: ornament 3 bông + hoa góc khung vòm. Định hướng dài hạn: `docs/DINH-HUONG-PHAT-TRIEN.md`.

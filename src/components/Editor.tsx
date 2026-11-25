@@ -101,6 +101,7 @@ export default function Editor() {
     (async () => {
       const tplParam = params.get("template");
       const evParam = params.get("event");
+      const aspectParam = params.get("aspect");
       let d = loadDraft();
       if (!d) {
         d = createDefaultProject(getTemplate(tplParam).id, isEventType(evParam) ? evParam : "dam-ngo");
@@ -108,6 +109,7 @@ export default function Editor() {
         if (tplParam && TEMPLATES.some((t) => t.id === tplParam)) d = { ...d, templateId: tplParam };
         if (isEventType(evParam)) d = switchEvent(d, evParam);
       }
+      if (aspectParam === "16:9" || aspectParam === "9:16") d = { ...d, aspect: aspectParam };
       // chuyển ảnh của phiên bản cũ (localStorage) sang IndexedDB
       const legacy = takeLegacyPhoto();
       if (legacy && d.photos.length === 0) {
