@@ -90,7 +90,9 @@ export default function FrameSheet() {
       {TEMPLATES.filter((tpl) => !only || only.split(",").includes(tpl.id)).map((tpl) =>
         variants.map(([label, photos]) => {
           const tl = timelineOf({ data, photos });
-          const times = [...tl.scenes.map(sceneSnapTime), tl.duration - 0.3];
+          // &at=0.6,1.2,… : chụp đúng các thời điểm này (soi hiệu ứng hiện chữ / chuyển cảnh)
+          const at = q.get("at")?.split(",").map(Number).filter((v) => Number.isFinite(v));
+          const times = at?.length ? at : [...tl.scenes.map(sceneSnapTime), tl.duration - 0.3];
           return (
             <section key={tpl.id + label}>
               <h3 style={{ margin: "0 0 8px" }}>
