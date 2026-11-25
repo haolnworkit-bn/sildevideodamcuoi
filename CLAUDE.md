@@ -110,6 +110,14 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-25 (chuyển động v2 + Sen Ngọc mới — chủ dự án đánh giá chuyển động RẤT CAO): nhánh `design/sen-ngoc-v2` (trên feat/tv-presenter) và `feat/motion-v2` (trên sen-ngoc-v2), PR.
+  Sen Ngọc: bộ ảnh ChatGPT `_inbox/tong-hoa-xanh` → nền ngang + 4 cụm `decorations/` (back, sway/breathe); khổ dọc nền code giấy + khung 2 nét (chờ phiếu SN-02). Đã bỏ hoa sen code.
+  Chuyển động: `src/lib/render/motion.ts`. Mọi chữ qua `drawText` → `revealText` đọc `rc.reveal` {mode, r} do `drawReveal` (scenes `reveal(...)`, `drawBlock` theo `BlockItem.mode`) đặt:
+  wipe (script: quét viết tay mép mềm 6 dải + vệt sáng `rc.shine` lướt ở giây 2.5–3.7 của cảnh; 1 cảnh: 2 lần/vòng theo t toàn cục), chars (in hoa từng ký tự), words (từng từ),
+  grow (đường kẻ/ornament mọc từ giữa), photo (khung ảnh 0.94→1 easeOutBack). `rc.probe` → tắt hiệu ứng (bố cục đo như cũ).
+  runScenes: chuyển cảnh mới `soft` "Mờ ảo" (blur ≤10px + scale, giao nhau 1.3s) = MẶC ĐỊNH dự án mới (bản nháp cũ giữ lựa chọn); camera tiến 1.8% suốt cảnh (tắt khi 1 cảnh/probe).
+  /dev/frames thêm `&at=t1,t2,…`. Kiểm: /dev/layout 1.296 render 0 lỗi; MP4 hoang-kim 3 vòng 83.4s ~8× realtime; 9:16 1 cảnh 16.0s.
+  Ý tưởng tiếp: chuyển cảnh "vén màn" (cần vẽ cảnh ra canvas phụ), parallax lớp ảnh theo cảnh, chữ tên hiện từng nét (cần font path).
 - 2026-11-25 (luồng chiếu TV 16:9 — chủ dự án ưu tiên hơn editor điện thoại, nhánh `feat/tv-presenter` xếp chồng trên `chore/stage1-leftovers`, PR):
   Presenter: `screen.isExtended` → bảng chọn "Chiếu lên TV / màn hình này" (Window Management API `getScreenDetails` + `requestFullscreen({screen})`;
   hộp quyền làm mất lượt bấm → báo bấm lại); chờ `ensureFontsLoaded` (tối đa 6s) mới chiếu; vẽ 30 hình/giây, t = frame/30 khớp MP4; phím M tắt tiếng.

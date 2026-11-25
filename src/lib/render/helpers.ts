@@ -1,4 +1,5 @@
 import type { FxSettings } from "../project";
+import { shinePhase } from "./motion";
 import type { Photo, PhotoSource, RenderContext, TimelineScene } from "./types";
 
 export const TAU = Math.PI * 2;
@@ -70,7 +71,7 @@ export function drawEntering(ctx: CanvasRenderingContext2D, p: number, dy: numbe
 }
 
 /** Thời điểm mọi phần tử của cảnh đã hiện xong (trễ tối đa 1.7s + 1.1s) */
-const SETTLED = 3.5;
+export const SETTLED = 3.5;
 
 /** Chạy các cảnh theo timeline với kiểu chuyển cảnh đã chọn */
 export function runScenes(
@@ -81,16 +82,28 @@ export function runScenes(
   const { ctx, t, D, W, H, fx } = rc;
   // Chỉ 1 cảnh: chữ đứng yên suốt vòng lặp (không mờ/hiện lại ở điểm nối, không chạy lại hiệu ứng vào cảnh)
   const single = rc.timeline.scenes.length === 1;
+  // "Mờ ảo" cần thời gian giao nhau dài hơn một chút cho mềm
+  const f = fx.transition === "soft" ? Math.max(fade, 1.3) : fade;
   for (const s of rc.timeline.scenes) {
     const draw = draws[s.type];
     if (!draw) continue;
-    const v = single ? 1 : sceneVisibility(t, D, s, fade);
+    const v = single ? 1 : sceneVisibility(t, D, s, f);
     if (v <= 0.001) continue;
-    const lt = single ? SETTLED : sceneLocalTime(t, D, s, fade);
+    const lt = single ? SETTLED : sceneLocalTime(t, D, s, f);
+    const dur = s.end - s.start;
     ctx.save();
     ctx.globalAlpha *= v;
-    applyTransition(ctx, fx.transition, v, lt < (s.end - s.start) / 2, W, H);
+    applyTransition(ctx, fx.transition, v, lt < dur / 2, W, H);
+    // "Hơi thở" của cảnh: máy quay tiến rất chậm suốt cảnh (không áp khi kiểm tra bố cục / 1 cảnh đứng yên)
+    if (!single && !rc.probe) {
+      const k = 1 + 0.018 * clamp((lt + f / 2) / (dur + f));
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(k, k);
+      ctx.translate(-W / 2, -H / 2);
+    }
+    rc.shine = shinePhase(lt, single, t, D);
     draw(lt, s);
+    rc.shine = undefined;
     ctx.restore();
   }
 }
@@ -110,6 +123,14 @@ function applyTransition(
     ctx.translate(-W / 2, -H / 2);
   } else if (kind === "slide") {
     ctx.translate(0, (entering ? 1 : -1) * (1 - v) * 70);
+  } else if (kind === "soft") {
+    // Mờ ảo: cảnh mới hiện từ nhoè sang nét và thu nhẹ vào; cảnh cũ nhoè đi, trôi lên
+    const q = 1 - v;
+    if (q > 0.01) ctx.filter = `blur(${(q * 10).toFixed(2)}px)`;
+    const s = entering ? 1 + 0.035 * q : 1 - 0.012 * q;
+    ctx.translate(W / 2, H / 2 + (entering ? 0 : -28 * q));
+    ctx.scale(s, s);
+    ctx.translate(-W / 2, -H / 2);
   }
 }
 
