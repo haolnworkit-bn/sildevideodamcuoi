@@ -22,7 +22,7 @@ export interface StyleOverrides {
 export interface FxSettings {
   /** Mật độ hạt (cánh hoa, lấp lánh…): 0 = tắt, 1 = mặc định, 1.5 = nhiều */
   particles: number;
-  transition: "fade" | "zoom" | "slide";
+  transition: "soft" | "curtain" | "fade" | "zoom" | "slide";
 }
 
 export interface MusicSettings {
@@ -110,7 +110,7 @@ export function createDefaultProject(templateId: string, eventType: EventTypeId)
     photoSide: "left",
     scenes: { intro: true, message: true, album: true },
     style: {},
-    fx: { particles: 1, transition: "fade" },
+    fx: { particles: 1, transition: "soft" },
     music: { enabled: false, volume: 0.8, name: "" },
   };
 }

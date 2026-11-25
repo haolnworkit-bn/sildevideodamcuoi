@@ -5,8 +5,8 @@
 import { MAX_PHOTOS, dateInfo, detailLine, eventTitle, fullNamePair, namePair } from "../project";
 import {
   clamp,
-  drawEntering,
   drawPhoto,
+  easeOutCubic,
   enter,
   fitFont,
   paint,
@@ -16,6 +16,7 @@ import {
   type Paint,
 } from "./helpers";
 import { MIN_PX, drawText, fitInk, fitLines, fitParagraph, probeRect, safeBox, stackLines } from "./layout";
+import { drawReveal, enterRaw, revealDur, type RevealMode } from "./motion";
 import type { Photo, RenderContext, Theme, TimelineScene, VideoTemplate } from "./types";
 
 type Rect = [number, number, number, number];
@@ -53,6 +54,19 @@ function center(ctx: CanvasRenderingContext2D) {
   ctx.textBaseline = "middle";
 }
 
+interface RevealExtra {
+  dur?: number;
+  dy?: number;
+  cx?: number;
+  cy?: number;
+  half?: number;
+}
+
+/** Hiện một phần tử theo kiểu `mode` (xem motion.ts), bắt đầu ở `delay` giây của cảnh */
+function reveal(rc: RenderContext, lt: number, delay: number, mode: RevealMode, fn: () => void, o: RevealExtra = {}) {
+  drawReveal(rc, enterRaw(lt, delay, revealDur(mode, o.dur)), { mode, ...o }, fn);
+}
+
 // =====================================================================
 // Cảnh 1: Giới thiệu
 // =====================================================================
@@ -62,6 +76,10 @@ interface BlockItem {
   delay: number;
   dur?: number;
   dy: number;
+  /** Kiểu hiện (motion.ts). Mặc định plain */
+  mode?: RevealMode;
+  /** Nửa bề rộng (mode grow) */
+  half?: number;
   draw: (y: number, p: number) => void;
 }
 
@@ -95,6 +113,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: 66 + (fit.lines.length - 1) * lh,
       delay: 0.3,
       dy: 20,
+      mode: "chars",
       draw: (y) => {
         setSpacing(ctx, 12);
         ctx.font = font(fit.size);
@@ -134,6 +153,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
     delay: 0.6,
     dur: 1.3,
     dy: 30,
+    mode: caps ? "chars" : "wipe",
     draw: (y, p) => {
       if (spec.titleBacking) spec.titleBacking(rc, cx, y, Math.min(o.maxW + 60, portrait ? 760 : 1120), 190, p);
       // đặt sao cho khung glyph nằm giữa ô của nó (không chồm lên dòng chào phía trên)
@@ -148,7 +168,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
   });
 
   if (o.divider) {
-    items.push({ h: 56, delay: 1.0, dy: 0, draw: (y) => drawDivider(ctx, cx, y, 220, o.pal.line) });
+    items.push({ h: 56, delay: 1.0, dy: 0, mode: "grow", half: 240, draw: (y) => drawDivider(ctx, cx, y, 220, o.pal.line) });
   }
 
   if (spec.namesLine === "script") {
@@ -160,6 +180,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: Math.max(116, st.height + 34),
       delay: 1.3,
       dy: 20,
+      mode: "wipe",
       draw: (y) => {
         ctx.font = font(fit.size);
         ctx.fillStyle = paint(ctx, o.pal.names, y, 100);
@@ -175,6 +196,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: Math.max(88, st.height + 40),
       delay: 1.3,
       dy: 20,
+      mode: "words",
       draw: (y) => {
         ctx.font = font(fit.size);
         ctx.fillStyle = o.pal.body;
@@ -188,6 +210,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: 62,
       delay: 1.6,
       dy: 20,
+      mode: "chars",
       draw: (y) => {
         setSpacing(ctx, 8);
         fitFont(ctx, `${info.weekday.toUpperCase()}  ·  ${info.solar}`, (s) => `500 ${s}px ${fonts.sans}`, o.maxW, 32);
@@ -201,14 +224,15 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
 
 const blockHeight = (items: BlockItem[]) => items.reduce((s, i) => s + i.h, 0);
 
-function drawBlock(rc: RenderContext, lt: number, items: BlockItem[], top: number) {
+function drawBlock(rc: RenderContext, lt: number, items: BlockItem[], top: number, cx: number) {
   let y = top;
   for (const it of items) {
-    const p = enter(lt, it.delay, it.dur ?? 1.1);
+    const mode = it.mode ?? "plain";
+    const r = enterRaw(lt, it.delay, revealDur(mode, it.dur));
     const cy = y + it.h / 2;
-    drawEntering(rc.ctx, p, it.dy, () => {
+    drawReveal(rc, r, { mode, dy: it.dy, cx, half: it.half }, () => {
       center(rc.ctx);
-      it.draw(cy, p);
+      it.draw(cy, easeOutCubic(r));
     });
     y += it.h;
   }
@@ -257,11 +281,11 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     const frame: Rect = portrait ? [190, 150, 700, 860] : left ? [190, 150, 620, 780] : [1110, 150, 620, 780];
     const cx = portrait ? W / 2 : left ? 1330 : 600;
     const maxW = portrait ? 920 : 840;
-    drawEntering(ctx, enter(lt, 0.1, 1.5), 40, () => tpl.photoFrame(ctx, photo, ...frame, rc));
+    reveal(rc, lt, 0.1, "photo", () => tpl.photoFrame(ctx, photo, ...frame, rc), { dur: 1.5, dy: 30, cx: frame[0] + frame[2] / 2, cy: frame[1] + frame[3] / 2 });
     probeRect(rc, "photo", ...frame);
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW });
     const h = blockHeight(items);
-    drawBlock(rc, lt, items, portrait ? 1070 + (560 - h) / 2 : (H - h) / 2);
+    drawBlock(rc, lt, items, portrait ? 1070 + (560 - h) / 2 : (H - h) / 2, cx);
     return;
   }
 
@@ -286,7 +310,7 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     }
     const greet = data.greeting.trim().toUpperCase();
     if (greet) {
-      drawEntering(ctx, enter(lt, 0.2), 20, () => {
+      reveal(rc, lt, 0.2, "chars", () => {
         center(ctx);
         setSpacing(ctx, 14);
         const fit = fitLines(ctx, greet, (s) => `500 ${s}px ${rc.fonts.sans}`, portrait ? 900 : 1200, portrait ? 28 : 30, MIN_PX.greeting + 2);
@@ -295,40 +319,40 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
         fit.lines.forEach((l, i) => drawText(rc, "greeting", l, W / 2, cy - r - greetGap - (fit.lines.length - 1 - i) * lh));
       });
     }
-    drawEntering(ctx, enter(lt, 0.3, 1.4), 30, () => emblem(rc, W / 2, cy, r, photo));
+    reveal(rc, lt, 0.3, "photo", () => emblem(rc, W / 2, cy, r, photo), { dur: 1.4, dy: 20, cx: W / 2, cy });
     probeRect(rc, "emblem", W / 2 - r * 0.8, cy - r * 0.8, r * 1.6, r * 1.6);
-    drawBlock(rc, lt, items, cy + r + gapBelow);
+    drawBlock(rc, lt, items, cy + r + gapBelow, W / 2);
     return;
   }
 
   if (mode === "fullbleed" && photo) {
-    drawEntering(ctx, enter(lt, 0, 1.2), 0, () => {
+    reveal(rc, lt, 0, "plain", () => {
       drawPhoto(ctx, photo, 0, 0, W, H, rc, 0.03);
       const g = ctx.createLinearGradient(0, H * (portrait ? 0.45 : 0.35), 0, H);
       g.addColorStop(0, "rgba(18,20,16,0)");
       g.addColorStop(1, "rgba(18,20,16,0.8)");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
-    });
+    }, { dur: 1.2, dy: 0 });
     const light: Theme = { ...LIGHT_ON_PHOTO, ...tpl.onPhoto };
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal: light, cx: W / 2, maxW: portrait ? 920 : 1500 });
-    drawBlock(rc, lt, items, H - blockHeight(items) - (portrait ? 170 : 60));
+    drawBlock(rc, lt, items, H - blockHeight(items) - (portrait ? 170 : 60), W / 2);
     return;
   }
 
   if (mode === "faded" && photo) {
-    drawEntering(ctx, enter(lt, 0, 1.6), 0, () => fadedPhoto(rc, photo));
+    reveal(rc, lt, 0, "plain", () => fadedPhoto(rc, photo), { dur: 1.6, dy: 0 });
     const left = data.photoSide === "left";
     const cx = portrait ? W / 2 : left ? 1400 : 520;
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW: portrait ? 920 : 820 });
     const h = blockHeight(items);
     // dọc: chữ nằm ngay dưới ảnh, chừa ~350px đáy cho hoạ tiết của mẫu
-    drawBlock(rc, lt, items, portrait ? 1020 + (540 - h) / 2 : (H - h) / 2);
+    drawBlock(rc, lt, items, portrait ? 1020 + (540 - h) / 2 : (H - h) / 2, cx);
     return;
   }
 
   const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx: W / 2, maxW: portrait ? 920 : 1400 });
-  drawBlock(rc, lt, items, (H - blockHeight(items)) / 2);
+  drawBlock(rc, lt, items, (H - blockHeight(items)) / 2, W / 2);
 }
 
 // =====================================================================
@@ -386,24 +410,24 @@ export function messageScene(rc: RenderContext, lt: number, tpl: VideoTemplate) 
   const top = mid - ((lines.length - 1) * lh) / 2;
   const headY = top - (portrait ? 170 : 150);
 
-  drawEntering(ctx, enter(lt, 0.1), 20, () => tpl.ornament?.(rc, cx, headY - 110));
-  drawEntering(ctx, enter(lt, 0.3), 30, () => {
+  reveal(rc, lt, 0.1, "grow", () => tpl.ornament?.(rc, cx, headY - 110), { cx, half: W * 0.3 });
+  reveal(rc, lt, 0.3, "wipe", () => {
     center(ctx);
     ctx.font = `400 ${portrait ? 110 : 120}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, headY, 120);
     drawText(rc, "heading", "Lời cảm ơn", cx, headY);
   });
   lines.forEach((line, i) => {
-    drawEntering(ctx, enter(lt, 0.7 + i * 0.22, 1.2), 24, () => {
+    reveal(rc, lt, 0.8 + i * 0.3, "words", () => {
       center(ctx);
       ctx.font = font(size);
       ctx.fillStyle = pal.body;
       drawText(rc, "message", line, cx, top + i * lh);
-    });
+    }, { dur: 1.2 });
   });
-  drawEntering(ctx, enter(lt, 1.4 + lines.length * 0.2), 0, () =>
+  reveal(rc, lt, 1.4 + lines.length * 0.25, "grow", () =>
     drawDivider(ctx, cx, Math.min(H - 110, top + lines.length * lh + 30), 220, pal.line),
-  );
+  { cx, half: 240 });
 }
 
 // =====================================================================
@@ -424,16 +448,16 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
   center(ctx);
 
   // tiêu đề
-  drawEntering(ctx, enter(lt, 0.2), 24, () => {
+  reveal(rc, lt, 0.2, "wipe", () => {
     center(ctx);
     ctx.font = `400 ${portrait ? 120 : 130}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, 0, 130);
     drawText(rc, "heading", "Khoảnh khắc", textCx, portrait ? 190 : 420);
   });
   if (!portrait) {
-    drawEntering(ctx, enter(lt, 0.5), 0, () => drawDivider(ctx, textCx, 530, 200, pal.line));
+    reveal(rc, lt, 0.5, "grow", () => drawDivider(ctx, textCx, 530, 200, pal.line), { cx: textCx, half: 220 });
     const [a, b] = fullNamePair(rc.data);
-    drawEntering(ctx, enter(lt, 0.7), 20, () => {
+    reveal(rc, lt, 0.7, "words", () => {
       center(ctx);
       const fit = fitLines(ctx, `${a}  &  ${b}`, (z) => `italic 500 ${z}px ${bodyFontOf(rc, tpl)}`, 760, 54, MIN_PX.namesLine + 4, "  &  ");
       ctx.fillStyle = pal.body;
@@ -445,6 +469,8 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
   probeRect(rc, "photo", ...frame);
   // ảnh chuyển lần lượt (cross-fade)
   const p0 = enter(lt, 0, 1.2);
+  const fcx = frame[0] + frame[2] / 2;
+  const fcy = frame[1] + frame[3] / 2;
   photos.forEach((ph, i) => {
     const a0 = i === 0 ? 1 : clamp((lt - (i * slot - fade / 2)) / fade);
     const a1 = i === n - 1 ? 1 : clamp(((i + 1) * slot + fade / 2 - lt) / fade);
@@ -452,7 +478,11 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
     if (v <= 0.001) return;
     ctx.save();
     ctx.globalAlpha *= v;
-    ctx.translate(0, (1 - p0) * 40);
+    // vào cảnh: phóng nhẹ vào chỗ; mỗi ảnh mới cũng thu nhẹ vào chỗ cho có nhịp
+    const sc = (0.95 + 0.05 * p0) * (i === 0 ? 1 : 1.03 - 0.03 * easeOutCubic(a0));
+    ctx.translate(fcx, fcy + (1 - p0) * 30);
+    ctx.scale(sc, sc);
+    ctx.translate(-fcx, -fcy);
     tpl.photoFrame(ctx, ph, ...frame, rc);
     ctx.restore();
   });
@@ -460,14 +490,14 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
   // chấm chỉ số ảnh
   const cur = clamp(Math.floor(lt / slot), 0, n - 1);
   const dotsY = portrait ? 1490 : 720;
-  drawEntering(ctx, enter(lt, 0.8), 0, () => {
+  reveal(rc, lt, 0.8, "plain", () => {
     for (let i = 0; i < n; i++) {
       ctx.fillStyle = i === cur ? pal.accent : pal.line;
       ctx.beginPath();
       ctx.arc(textCx + (i - (n - 1) / 2) * 30, dotsY, i === cur ? 7 : 5, 0, Math.PI * 2);
       ctx.fill();
     }
-  });
+  }, { dy: 0 });
 }
 
 // =====================================================================
@@ -587,11 +617,11 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
 
   if (frame && photo) {
     const f = frame;
-    drawEntering(ctx, enter(lt, 0.15, 1.4), 40, () => tpl.photoFrame(ctx, photo, ...f, rc));
+    reveal(rc, lt, 0.15, "photo", () => tpl.photoFrame(ctx, photo, ...f, rc), { dur: 1.4, dy: 30, cx: f[0] + f[2] / 2, cy: f[1] + f[3] / 2 });
     probeRect(rc, "photo", ...f);
   }
 
-  drawEntering(ctx, enter(lt, 0.1), 20, () => {
+  reveal(rc, lt, 0.1, "chars", () => {
     center(ctx);
     setSpacing(ctx, 14);
     fitFont(ctx, eventTitle(data).toUpperCase(), (s) => `500 ${s}px ${fonts.sans}`, maxW, 32);
@@ -599,15 +629,15 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     drawText(rc, "label", eventTitle(data).toUpperCase(), cx, y.label);
   });
 
-  drawEntering(ctx, enter(lt, 0.4, 1.3), 30, () => {
+  reveal(rc, lt, 0.4, "wipe", () => {
     center(ctx);
     drawNames(rc, a, b, cx, y.names, maxW, photo && !portrait ? 130 : 150, pal.names, false);
-  });
+  }, { dur: 1.6 });
 
-  if (info.valid) drawEntering(ctx, enter(lt, 1.0), 24, () => drawDateBlock(rc, cx, y.date, info, k));
+  if (info.valid) reveal(rc, lt, 1.1, "chars", () => drawDateBlock(rc, cx, y.date, info, k));
 
   if (lunar) {
-    drawEntering(ctx, enter(lt, 1.4), 20, () => {
+    reveal(rc, lt, 1.5, "words", () => {
       center(ctx);
       fitFont(ctx, `(${lunar})`, (z) => `italic 500 ${z}px ${bf}`, maxW, 42);
       ctx.fillStyle = pal.body;
@@ -615,7 +645,7 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     });
   }
   if (detail) {
-    drawEntering(ctx, enter(lt, 1.7), 20, () => {
+    reveal(rc, lt, 1.8, "words", () => {
       center(ctx);
       setSpacing(ctx, 2);
       // địa chỉ dài: xuống 2 dòng (ngắt ở "·" nếu có) thay vì thu chữ tới mức không đọc được

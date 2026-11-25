@@ -78,6 +78,10 @@ export interface RenderContext {
   fx: FxSettings;
   /** Chỉ bật ở trang kiểm tra bố cục: ghi khung bao chữ/ảnh (xem layout.ts) */
   probe?: LayoutProbe;
+  /** Trạng thái hiện của phần tử đang vẽ (motion.ts → drawText) */
+  reveal?: import("./motion").RevealState;
+  /** Pha vệt sáng lướt qua chữ lớn của cảnh đang vẽ, 0..1 (ngoài khoảng = tắt) */
+  shine?: number;
 }
 
 export type PhotoFrame = (

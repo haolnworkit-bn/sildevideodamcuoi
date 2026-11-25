@@ -415,6 +415,8 @@ export function FxPanel({ data, patch }: { data: ProjectData; patch: Patch }) {
     [1.5, "Nhiều"],
   ];
   const trans: Array<[ProjectData["fx"]["transition"], string]> = [
+    ["soft", "Mờ ảo"],
+    ["curtain", "Vén màn"],
     ["fade", "Mờ dần"],
     ["zoom", "Phóng nhẹ"],
     ["slide", "Trượt lên"],

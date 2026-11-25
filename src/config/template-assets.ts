@@ -113,6 +113,43 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
     ],
   },
 
+  /**
+   * Sen Ngọc màu nước (2026-11-25, ChatGPT): nền ngang giấy kem có khung mảnh + 4 cụm sen/lá tách nền.
+   * Chưa có nền dọc → khổ dọc dùng nền code (giấy + khung mảnh) của mẫu. Cỡ theo ảnh ghép thử 1920×1080.
+   */
+  "sen-ngoc": {
+    background: { landscape: "/assets/sen-ngoc/backgrounds/landscape.webp", zoom: 0.01 },
+    back: [
+      // cành lá trên — chỉ khổ dọc (khổ ngang: góc trên phải đã có vệt màu nước, cành sẽ đè tiêu đề khi có ảnh)
+      {
+        src: "/assets/sen-ngoc/decorations/canh-tren.webp",
+        anchor: "tr", x: 0.97, y: 0.05, height: 0.1, only: "portrait",
+        motion: { sway: 0.02, cycles: 2, phase: 1.7 },
+      },
+      // cành lá dưới — mọc lên từ đáy, giữa-trái
+      {
+        src: "/assets/sen-ngoc/decorations/canh-duoi.webp",
+        anchor: "bl", x: 0.2, y: 1.02, height: 0.25,
+        motion: { sway: 0.015, cycles: 2, phase: 0.6 },
+        portrait: { hide: true },
+      },
+      // sen trắng góc trên trái
+      {
+        src: "/assets/sen-ngoc/decorations/goc-tren-trai.webp",
+        anchor: "tl", x: -0.005, y: -0.01, height: 0.4,
+        motion: { sway: 0.006, breathe: 0.004, cycles: 2 },
+        portrait: { x: 0, y: 0, height: 0.2 },
+      },
+      // cụm sen đôi góc dưới phải
+      {
+        src: "/assets/sen-ngoc/decorations/goc-duoi-phai.webp",
+        anchor: "br", x: 1.04, y: 1.06, height: 0.41,
+        motion: { breathe: 0.006, cycles: 2, phase: 2.4 },
+        portrait: { x: 1, y: 1, height: 0.24 },
+      },
+    ],
+  },
+
   /** Hồng Phượng 2026: nền riêng ngang/dọc và artwork màu nước. */
   "hong-phuong": {
     preload: ["/assets/hong-phuong/decorations/silk-ribbon.webp"],

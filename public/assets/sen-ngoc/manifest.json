@@ -1,0 +1,92 @@
+{
+  "templateId": "sen-ngoc",
+  "schemaVersion": 1,
+  "notes": "Sen Ngọc màu nước (2026-11-25): bộ ảnh ChatGPT do chủ dự án đưa vào _inbox/tong-hoa-xanh, thay toàn bộ hoa sen/lá/mặt nước vẽ bằng code. Viền vàng/xanh ở rìa alpha của 02–04 gần như trong suốt, ghép lên nền giấy không lộ. Chưa có nền dọc (phiếu SN-02).",
+  "assets": [
+    {
+      "file": "backgrounds/landscape.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — nền ngang giấy kem + khung mảnh + vệt màu nước góc, upscale lanczos3 1672→1920",
+      "originalFileName": "xanh-la-01.png",
+      "nativeDimensions": [
+        1672,
+        941
+      ],
+      "outputDimensions": [
+        1920,
+        1080
+      ],
+      "alpha": false
+    },
+    {
+      "file": "decorations/goc-tren-trai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — cụm sen trắng + lá góc trên trái, cắt sát vùng alpha",
+      "originalFileName": "xanh-la-02.png",
+      "nativeDimensions": [
+        1448,
+        1086
+      ],
+      "outputDimensions": [
+        1179,
+        1041
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/goc-duoi-phai.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — cụm sen đôi + nụ góc dưới phải, cắt sát vùng alpha",
+      "originalFileName": "xanh-la-03.png",
+      "nativeDimensions": [
+        1448,
+        1086
+      ],
+      "outputDimensions": [
+        1377,
+        1054
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/canh-duoi.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — cành lá + nụ mọc từ đáy, cắt sát vùng alpha",
+      "originalFileName": "xanh-la-04.png",
+      "nativeDimensions": [
+        1254,
+        1254
+      ],
+      "outputDimensions": [
+        957,
+        881
+      ],
+      "alpha": true
+    },
+    {
+      "file": "decorations/canh-tren.webp",
+      "source": "chatgpt-image",
+      "licenseStatus": "unverified",
+      "reviewStatus": "visual-qa-pending",
+      "origin": "ChatGPT Image — cành lá rủ góc trên phải (chỉ dùng khổ dọc), cắt sát vùng alpha",
+      "originalFileName": "xanh-la-05.png",
+      "nativeDimensions": [
+        1254,
+        1254
+      ],
+      "outputDimensions": [
+        598,
+        599
+      ],
+      "alpha": true
+    }
+  ]
+}
