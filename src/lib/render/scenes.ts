@@ -520,8 +520,6 @@ function drawNames(
   big: number,
   fill: Paint,
   forceStack: boolean,
-  /** Hai tên đang "chạy vào" từ hai bên: độ lệch còn lại (px) */
-  spread = 0,
 ) {
   const { ctx, fonts } = rc;
   const f = (sz: number) => `400 ${sz}px ${fonts.script}`;
@@ -529,20 +527,7 @@ function drawNames(
   const one = `${a}  &  ${b}`;
   ctx.fillStyle = paint(ctx, fill, cy, 260);
   if (!forceStack && ctx.measureText(one).width <= maxW) {
-    if (spread < 0.5) {
-      drawText(rc, "names", one, cx, cy);
-      return;
-    }
-    // tách 3 phần để tên trái chạy từ trái, tên phải chạy từ phải, "&" ở giữa đứng yên
-    const x0 = cx - ctx.measureText(one).width / 2;
-    const xAmp = x0 + ctx.measureText(`${a}  `).width;
-    const xB = x0 + ctx.measureText(`${a}  &  `).width;
-    ctx.save();
-    ctx.textAlign = "left";
-    drawText(rc, "names", a, x0 - spread, cy);
-    drawText(rc, "names", "&", xAmp, cy);
-    drawText(rc, "names", b, xB + spread, cy);
-    ctx.restore();
+    drawText(rc, "names", one, cx, cy);
     return;
   }
   const sz = Math.min(fitInk(ctx, a, f, maxW, Math.min(big, 124)), fitInk(ctx, b, f, maxW, Math.min(big, 124)));
@@ -561,8 +546,8 @@ function drawNames(
   const shift = (yA - ma.actualBoundingBoxAscent + yB + mb.actualBoundingBoxDescent) / 2 - cy;
   drawText(rc, "namesLine", "&", cx, yAmp - shift);
   ctx.font = f(sz);
-  drawText(rc, "names", a, cx - spread, yA - shift);
-  drawText(rc, "names", b, cx + spread, yB - shift);
+  drawText(rc, "names", a, cx, yA - shift);
+  drawText(rc, "names", b, cx, yB - shift);
 }
 
 export function drawDateBlock(
@@ -650,12 +635,9 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     drawText(rc, "label", eventTitle(data).toUpperCase(), cx, y.label);
   });
 
-  // hai tên chạy từ hai bên vào gặp nhau ở giữa (đồng thời hiện như viết tay)
-  const nr = enterRaw(lt, 0.4, revealDur("wipe", 1.6));
-  const spread = (portrait ? 110 : 160) * Math.pow(1 - clamp(nr * 1.1), 4);
   reveal(rc, lt, 0.4, "wipe", () => {
     center(ctx);
-    drawNames(rc, a, b, cx, y.names, maxW, photo && !portrait ? 130 : 150, pal.names, false, spread);
+    drawNames(rc, a, b, cx, y.names, maxW, photo && !portrait ? 130 : 150, pal.names, false);
   }, { dur: 1.6 });
 
   if (info.valid) reveal(rc, lt, 1.1, "chars", () => drawDateBlock(rc, cx, y.date, info, k));
