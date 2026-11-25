@@ -57,6 +57,7 @@ function center(ctx: CanvasRenderingContext2D) {
 interface RevealExtra {
   dur?: number;
   dy?: number;
+  dx?: number;
   cx?: number;
   cy?: number;
   half?: number;
@@ -80,6 +81,8 @@ interface BlockItem {
   mode?: RevealMode;
   /** Nửa bề rộng (mode grow) */
   half?: number;
+  /** Chạy vào theo chiều ngang (px, âm = từ trái) */
+  dx?: number;
   draw: (y: number, p: number) => void;
 }
 
@@ -153,6 +156,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
     delay: 0.6,
     dur: 1.3,
     dy: 30,
+    dx: -90,
     mode: caps ? "chars" : "wipe",
     draw: (y, p) => {
       if (spec.titleBacking) spec.titleBacking(rc, cx, y, Math.min(o.maxW + 60, portrait ? 760 : 1120), 190, p);
@@ -180,6 +184,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: Math.max(116, st.height + 34),
       delay: 1.3,
       dy: 20,
+      dx: 90,
       mode: "wipe",
       draw: (y) => {
         ctx.font = font(fit.size);
@@ -196,6 +201,7 @@ function introBlock(rc: RenderContext, tpl: VideoTemplate, o: BlockOpts): BlockI
       h: Math.max(88, st.height + 40),
       delay: 1.3,
       dy: 20,
+      dx: 60,
       mode: "words",
       draw: (y) => {
         ctx.font = font(fit.size);
@@ -230,7 +236,7 @@ function drawBlock(rc: RenderContext, lt: number, items: BlockItem[], top: numbe
     const mode = it.mode ?? "plain";
     const r = enterRaw(lt, it.delay, revealDur(mode, it.dur));
     const cy = y + it.h / 2;
-    drawReveal(rc, r, { mode, dy: it.dy, cx, half: it.half }, () => {
+    drawReveal(rc, r, { mode, dy: it.dy, dx: it.dx, cx, half: it.half }, () => {
       center(rc.ctx);
       it.draw(cy, easeOutCubic(r));
     });
@@ -281,7 +287,7 @@ export function introScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     const frame: Rect = portrait ? [190, 150, 700, 860] : left ? [190, 150, 620, 780] : [1110, 150, 620, 780];
     const cx = portrait ? W / 2 : left ? 1330 : 600;
     const maxW = portrait ? 920 : 840;
-    reveal(rc, lt, 0.1, "photo", () => tpl.photoFrame(ctx, photo, ...frame, rc), { dur: 1.5, dy: 30, cx: frame[0] + frame[2] / 2, cy: frame[1] + frame[3] / 2 });
+    reveal(rc, lt, 0.1, "photo", () => tpl.photoFrame(ctx, photo, ...frame, rc), { dur: 1.5, dy: 30, dx: portrait ? 0 : left ? -120 : 120, cx: frame[0] + frame[2] / 2, cy: frame[1] + frame[3] / 2 });
     probeRect(rc, "photo", ...frame);
     const items = introBlock(rc, tpl, { greeting: true, divider: true, date: true, pal, cx, maxW });
     const h = blockHeight(items);
@@ -416,14 +422,14 @@ export function messageScene(rc: RenderContext, lt: number, tpl: VideoTemplate) 
     ctx.font = `400 ${portrait ? 110 : 120}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, headY, 120);
     drawText(rc, "heading", "Lời cảm ơn", cx, headY);
-  });
+  }, { dx: -80 });
   lines.forEach((line, i) => {
     reveal(rc, lt, 0.8 + i * 0.3, "words", () => {
       center(ctx);
       ctx.font = font(size);
       ctx.fillStyle = pal.body;
       drawText(rc, "message", line, cx, top + i * lh);
-    }, { dur: 1.2 });
+    }, { dur: 1.2, dx: i % 2 ? -50 : 50 });
   });
   reveal(rc, lt, 1.4 + lines.length * 0.25, "grow", () =>
     drawDivider(ctx, cx, Math.min(H - 110, top + lines.length * lh + 30), 220, pal.line),
@@ -453,7 +459,7 @@ export function albumScene(rc: RenderContext, lt: number, s: TimelineScene, tpl:
     ctx.font = `400 ${portrait ? 120 : 130}px ${fonts.script}`;
     ctx.fillStyle = paint(ctx, pal.heading, 0, 130);
     drawText(rc, "heading", "Khoảnh khắc", textCx, portrait ? 190 : 420);
-  });
+  }, { dx: 90 });
   if (!portrait) {
     reveal(rc, lt, 0.5, "grow", () => drawDivider(ctx, textCx, 530, 200, pal.line), { cx: textCx, half: 220 });
     const [a, b] = fullNamePair(rc.data);
@@ -514,6 +520,8 @@ function drawNames(
   big: number,
   fill: Paint,
   forceStack: boolean,
+  /** Hai tên đang "chạy vào" từ hai bên: độ lệch còn lại (px) */
+  spread = 0,
 ) {
   const { ctx, fonts } = rc;
   const f = (sz: number) => `400 ${sz}px ${fonts.script}`;
@@ -521,7 +529,20 @@ function drawNames(
   const one = `${a}  &  ${b}`;
   ctx.fillStyle = paint(ctx, fill, cy, 260);
   if (!forceStack && ctx.measureText(one).width <= maxW) {
-    drawText(rc, "names", one, cx, cy);
+    if (spread < 0.5) {
+      drawText(rc, "names", one, cx, cy);
+      return;
+    }
+    // tách 3 phần để tên trái chạy từ trái, tên phải chạy từ phải, "&" ở giữa đứng yên
+    const x0 = cx - ctx.measureText(one).width / 2;
+    const xAmp = x0 + ctx.measureText(`${a}  `).width;
+    const xB = x0 + ctx.measureText(`${a}  &  `).width;
+    ctx.save();
+    ctx.textAlign = "left";
+    drawText(rc, "names", a, x0 - spread, cy);
+    drawText(rc, "names", "&", xAmp, cy);
+    drawText(rc, "names", b, xB + spread, cy);
+    ctx.restore();
     return;
   }
   const sz = Math.min(fitInk(ctx, a, f, maxW, Math.min(big, 124)), fitInk(ctx, b, f, maxW, Math.min(big, 124)));
@@ -540,8 +561,8 @@ function drawNames(
   const shift = (yA - ma.actualBoundingBoxAscent + yB + mb.actualBoundingBoxDescent) / 2 - cy;
   drawText(rc, "namesLine", "&", cx, yAmp - shift);
   ctx.font = f(sz);
-  drawText(rc, "names", a, cx, yA - shift);
-  drawText(rc, "names", b, cx, yB - shift);
+  drawText(rc, "names", a, cx - spread, yA - shift);
+  drawText(rc, "names", b, cx + spread, yB - shift);
 }
 
 export function drawDateBlock(
@@ -617,7 +638,7 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
 
   if (frame && photo) {
     const f = frame;
-    reveal(rc, lt, 0.15, "photo", () => tpl.photoFrame(ctx, photo, ...f, rc), { dur: 1.4, dy: 30, cx: f[0] + f[2] / 2, cy: f[1] + f[3] / 2 });
+    reveal(rc, lt, 0.15, "photo", () => tpl.photoFrame(ctx, photo, ...f, rc), { dur: 1.4, dy: 30, dx: portrait ? 0 : data.photoSide === "left" ? -120 : 120, cx: f[0] + f[2] / 2, cy: f[1] + f[3] / 2 });
     probeRect(rc, "photo", ...f);
   }
 
@@ -629,9 +650,12 @@ export function namesScene(rc: RenderContext, lt: number, tpl: VideoTemplate) {
     drawText(rc, "label", eventTitle(data).toUpperCase(), cx, y.label);
   });
 
+  // hai tên chạy từ hai bên vào gặp nhau ở giữa (đồng thời hiện như viết tay)
+  const nr = enterRaw(lt, 0.4, revealDur("wipe", 1.6));
+  const spread = (portrait ? 110 : 160) * Math.pow(1 - clamp(nr * 1.1), 4);
   reveal(rc, lt, 0.4, "wipe", () => {
     center(ctx);
-    drawNames(rc, a, b, cx, y.names, maxW, photo && !portrait ? 130 : 150, pal.names, false);
+    drawNames(rc, a, b, cx, y.names, maxW, photo && !portrait ? 130 : 150, pal.names, false, spread);
   }, { dur: 1.6 });
 
   if (info.valid) reveal(rc, lt, 1.1, "chars", () => drawDateBlock(rc, cx, y.date, info, k));

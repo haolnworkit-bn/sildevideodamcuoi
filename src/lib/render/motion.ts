@@ -50,6 +50,8 @@ interface RevealOpts {
   mode: RevealMode;
   /** Dịch lên khi hiện (px) — chỉ áp cho plain/wipe/grow/photo */
   dy?: number;
+  /** "Chạy vào" theo chiều ngang: bắt đầu lệch dx px rồi lướt về chỗ (áp cho mọi kiểu) */
+  dx?: number;
   /** Tâm của phần tử (grow, photo) */
   cx?: number;
   cy?: number;
@@ -65,6 +67,7 @@ export function drawReveal(rc: RenderContext, r: number, o: RevealOpts, fn: () =
   const prev = rc.reveal;
   rc.reveal = { mode: o.mode, r };
   ctx.save();
+  if (o.dx) ctx.translate(o.dx * Math.pow(1 - clamp(r * 1.15), 4), 0);
   switch (o.mode) {
     case "plain":
       ctx.globalAlpha *= e;
