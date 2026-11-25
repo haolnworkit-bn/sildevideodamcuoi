@@ -237,9 +237,9 @@ function applyTransition(
   } else if (kind === "slide") {
     ctx.translate(0, (entering ? 1 : -1) * (1 - v) * 70);
   } else if (kind === "soft") {
-    // Mờ ảo: cảnh mới hiện từ nhoè sang nét và thu nhẹ vào; cảnh cũ nhoè đi, trôi lên
+    // Mờ ảo: cảnh mới thu nhẹ vào chỗ, cảnh cũ trôi lên và lùi xa.
+    // KHÔNG dùng ctx.filter blur — vẽ cả cảnh qua bộ lọc mất hàng trăm ms/khung → preview giật.
     const q = 1 - v;
-    if (q > 0.01) ctx.filter = `blur(${(q * 10).toFixed(2)}px)`;
     const s = entering ? 1 + 0.035 * q : 1 - 0.012 * q;
     ctx.translate(W / 2, H / 2 + (entering ? 0 : -28 * q));
     ctx.scale(s, s);

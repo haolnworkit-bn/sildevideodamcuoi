@@ -133,7 +133,7 @@ function bandFill(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
   ctx.restore();
 }
 
-const FEATHER_BANDS = 6;
+const FEATHER_BANDS = 3; // ít dải = ít lần fillText mỗi khung (mỗi dải 1 lần vẽ lại chữ)
 
 /** Quét từ trái sang phải với mép mềm (giả lập viết tay) */
 function wipeText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, r: number) {
@@ -202,12 +202,13 @@ function shineText(ctx: CanvasRenderingContext2D, text: string, x: number, y: nu
   const h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent + 20;
   const B = Math.max(50, h * 0.9); // nửa bề rộng vệt
   const c = left - B + s * (right - left + 2 * B);
-  const K = 5;
+  // KHÔNG dùng ctx.filter (brightness) — bộ lọc canvas rất chậm, làm preview giật. Phủ chữ màu sáng trong vài dải.
+  const K = 2;
   ctx.save();
-  ctx.filter = "brightness(1.75) saturate(1.1)";
+  ctx.fillStyle = "rgba(255,250,232,1)";
   for (let i = -K; i < K; i++) {
     const a = 1 - Math.abs(i + 0.5) / K;
-    bandFill(ctx, text, x, y, c + (i * B) / K, c + ((i + 1) * B) / K + 0.5, top, h, a * a * 0.85);
+    bandFill(ctx, text, x, y, c + (i * B) / K, c + ((i + 1) * B) / K + 0.5, top, h, a * 0.5);
   }
   ctx.restore();
 }
