@@ -22,7 +22,7 @@ export interface StyleOverrides {
 export interface FxSettings {
   /** Mật độ hạt (cánh hoa, lấp lánh…): 0 = tắt, 1 = mặc định, 1.5 = nhiều */
   particles: number;
-  transition: "soft" | "fade" | "zoom" | "slide";
+  transition: "soft" | "curtain" | "fade" | "zoom" | "slide";
 }
 
 export interface MusicSettings {

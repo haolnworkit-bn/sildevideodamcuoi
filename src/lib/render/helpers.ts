@@ -83,7 +83,8 @@ export function runScenes(
   // Chỉ 1 cảnh: chữ đứng yên suốt vòng lặp (không mờ/hiện lại ở điểm nối, không chạy lại hiệu ứng vào cảnh)
   const single = rc.timeline.scenes.length === 1;
   // "Mờ ảo" cần thời gian giao nhau dài hơn một chút cho mềm
-  const f = fx.transition === "soft" ? Math.max(fade, 1.3) : fade;
+  // "Mờ ảo" cần thời gian giao nhau dài hơn một chút cho mềm; "Vén màn" cần đủ lâu để thấy màn tách ra
+  const f = fx.transition === "soft" ? Math.max(fade, 1.3) : fx.transition === "curtain" ? Math.max(fade, 1.6) : fade;
   for (const s of rc.timeline.scenes) {
     const draw = draws[s.type];
     if (!draw) continue;
@@ -91,20 +92,132 @@ export function runScenes(
     if (v <= 0.001) continue;
     const lt = single ? SETTLED : sceneLocalTime(t, D, s, f);
     const dur = s.end - s.start;
+    const entering = lt < dur / 2;
+    // "Hơi thở" của cảnh: máy quay tiến rất chậm suốt cảnh (không áp khi kiểm tra bố cục / 1 cảnh đứng yên)
+    const push = single || rc.probe ? 1 : 1 + 0.018 * clamp((lt + f / 2) / (dur + f));
+    if (fx.transition === "curtain" && v < 0.999 && !rc.probe) {
+      drawCurtain(rc, entering ? v : 1 - v, entering, push, () => {
+        rc.shine = shinePhase(lt, single, t, D);
+        draw(lt, s);
+        rc.shine = undefined;
+      });
+      continue;
+    }
     ctx.save();
     ctx.globalAlpha *= v;
-    applyTransition(ctx, fx.transition, v, lt < dur / 2, W, H);
-    // "Hơi thở" của cảnh: máy quay tiến rất chậm suốt cảnh (không áp khi kiểm tra bố cục / 1 cảnh đứng yên)
-    if (!single && !rc.probe) {
-      const k = 1 + 0.018 * clamp((lt + f / 2) / (dur + f));
+    applyTransition(ctx, fx.transition, v, entering, W, H);
+    if (push !== 1) {
       ctx.translate(W / 2, H / 2);
-      ctx.scale(k, k);
+      ctx.scale(push, push);
       ctx.translate(-W / 2, -H / 2);
     }
     rc.shine = shinePhase(lt, single, t, D);
     draw(lt, s);
     rc.shine = undefined;
     ctx.restore();
+  }
+}
+
+const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+/**
+ * "Vén màn": màn mở từ giữa ra hai bên. Cảnh cũ tách đôi, hai nửa trượt sang hai bên và mờ dần;
+ * cảnh mới hiện trong khe mở (mép mềm), thu nhẹ vào chỗ; hai mép màn có vệt sáng mảnh màu nhấn.
+ * Cảnh được vẽ vào canvas phụ cùng độ phân giải rồi che bằng mặt nạ gradient → mép mềm, không nhân đôi chi phí vẽ cảnh.
+ * `p` = tiến độ mở màn 0..1 (giống nhau cho cảnh vào và cảnh ra tại cùng thời điểm → hai mặt nạ bù nhau, không bóng ma).
+ */
+function drawCurtain(rc: RenderContext, p: number, entering: boolean, push: number, drawScene: () => void) {
+  const main = rc.ctx;
+  const { W, H } = rc;
+  const cw = main.canvas.width;
+  const ch = main.canvas.height;
+  const base = main.getTransform();
+  const sx = base.a || 1; // tỉ lệ sân khấu logic → điểm ảnh
+  const e = easeInOutCubic(clamp(p));
+  const F = W * 0.1; // độ mềm mép màn (logic px)
+  const cx = W / 2;
+  const hw = e * (W / 2 + F / 2); // nửa bề rộng khe mở
+
+  const sc = scratchCanvas("curtain", cw, ch);
+  sc.width = cw; // xoá + đặt lại trạng thái
+  const c = sc.getContext("2d")!;
+  c.setTransform(base);
+  {
+    const k = push * (entering ? 1.025 - 0.025 * e : 1);
+    c.translate(W / 2, H / 2);
+    c.scale(k, k);
+    c.translate(-W / 2, -H / 2);
+  }
+  rc.ctx = c;
+  try {
+    drawScene();
+  } finally {
+    rc.ctx = main;
+  }
+
+  // Mặt nạ ngang: alpha(x) = độ mở tại x (cảnh vào) hoặc phần bù (cảnh ra)
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalAlpha = 1;
+  c.filter = "none";
+  c.globalCompositeOperation = "destination-in";
+  const g = c.createLinearGradient(0, 0, cw, 0);
+  const N = 48;
+  for (let i = 0; i <= N; i++) {
+    const x = (i / N) * W;
+    // cảnh vào: lộ trong khe mở; cảnh ra: chỉ làm mềm đường tách ở giữa (hai nửa sẽ trượt ra)
+    const a = entering ? clamp((hw + F / 2 - Math.abs(x - cx)) / F) : clamp(Math.abs(x - cx) / (F * 0.35));
+    g.addColorStop(i / N, `rgba(0,0,0,${a.toFixed(3)})`);
+  }
+  c.fillStyle = g;
+  c.fillRect(0, 0, cw, ch);
+
+  main.save();
+  main.setTransform(1, 0, 0, 1, 0, 0);
+  if (entering) {
+    main.drawImage(sc, 0, 0);
+  } else {
+    // hai nửa màn trượt ra hai bên và mờ dần
+    const shift = hw * sx;
+    main.globalAlpha *= 1 - 0.75 * e;
+    const half = cx * sx;
+    main.save();
+    main.beginPath();
+    // vùng cắt theo vị trí SAU khi trượt: nửa trái nguồn [0, half] → đích [-shift, half-shift]
+    main.rect(0, 0, Math.max(0, half - shift), ch);
+    main.clip();
+    main.drawImage(sc, -shift, 0);
+    main.restore();
+    main.beginPath();
+    main.rect(half + shift, 0, Math.max(0, cw - half - shift), ch);
+    main.clip();
+    main.drawImage(sc, shift, 0);
+  }
+  main.restore();
+
+  // vệt sáng ở hai mép màn (chỉ vẽ một lần, theo cảnh vào)
+  if (entering && e > 0.01 && e < 0.99) {
+    const a = Math.sin(Math.PI * e) * 0.55;
+    main.save();
+    main.globalAlpha = a;
+    for (const d of [-1, 1]) {
+      const x = cx + d * hw;
+      const lg = main.createLinearGradient(x - F * 0.25, 0, x + F * 0.25, 0);
+      lg.addColorStop(0, "rgba(255,255,255,0)");
+      lg.addColorStop(0.5, rc.theme.accent);
+      lg.addColorStop(1, "rgba(255,255,255,0)");
+      const vg = main.createLinearGradient(0, H * 0.1, 0, H * 0.9);
+      main.fillStyle = lg;
+      main.globalAlpha = a * 0.35;
+      main.fillRect(x - F * 0.25, 0, F * 0.5, H);
+      // lõi mảnh, đậm ở giữa khung, nhạt về hai đầu
+      vg.addColorStop(0, "rgba(255,255,255,0)");
+      vg.addColorStop(0.5, rc.theme.accent);
+      vg.addColorStop(1, "rgba(255,255,255,0)");
+      main.fillStyle = vg;
+      main.globalAlpha = a;
+      main.fillRect(x - 1.5, 0, 3, H);
+    }
+    main.restore();
   }
 }
 

@@ -110,6 +110,11 @@ node scripts/probe-export.mjs "<chrome.exe>" <profileDir> "http://localhost:3123
 Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool Read.
 
 ## Trạng thái phiên gần nhất (cập nhật mỗi khi chuyển chat)
+- 2026-11-25 (chuyển cảnh "Vén màn", nhánh `feat/curtain-transition` từ `feat/motion-v2`, PR vào main): `fx.transition = "curtain"`;
+  `drawCurtain` trong helpers.ts vẽ cảnh vào canvas phụ (rc.ctx tạm đổi) + mặt nạ gradient: cảnh cũ tách đôi ở giữa, 2 nửa trượt ra & mờ,
+  cảnh mới lộ trong khe (mép mềm, thu 1.025→1), vệt sáng màu accent ở mép khe. Giao nhau ≥1.6s. Bỏ qua khi probe/1 cảnh.
+  /dev/frames & /dev/export nhận `&tr=`. MP4 sen-ngoc 2 vòng có nhạc 55.6s (7.7× thực); hong-phuong 9:16 40.0s.
+  LƯU Ý GIT: PR #14–16 merge chồng vào nhánh trung gian, KHÔNG vào main → PR này mang cả #14–16 vào main. PR chồng: đổi base về main trước khi merge.
 - 2026-11-25 (chuyển động v2 + Sen Ngọc mới — chủ dự án đánh giá chuyển động RẤT CAO): nhánh `design/sen-ngoc-v2` (trên feat/tv-presenter) và `feat/motion-v2` (trên sen-ngoc-v2), PR.
   Sen Ngọc: bộ ảnh ChatGPT `_inbox/tong-hoa-xanh` → nền ngang + 4 cụm `decorations/` (back, sway/breathe); khổ dọc nền code giấy + khung 2 nét (chờ phiếu SN-02). Đã bỏ hoa sen code.
   Chuyển động: `src/lib/render/motion.ts`. Mọi chữ qua `drawText` → `revealText` đọc `rc.reveal` {mode, r} do `drawReveal` (scenes `reveal(...)`, `drawBlock` theo `BlockItem.mode`) đặt:

@@ -70,6 +70,8 @@ export default function FrameSheet() {
       // &msg=... : thử lời cảm ơn dài / nhiều dòng (dùng %0A để xuống dòng)
       ...(q.get("msg") ? { message: q.get("msg")! } : {}),
       ...(q.get("scenes") ? { scenes: scenesForCount(base.scenes, Number(q.get("scenes")) as 1 | 2 | 3) } : {}),
+      // &tr=soft|curtain|fade|zoom|slide : kiểu chuyển cảnh
+      ...(q.get("tr") ? { fx: { ...base.fx, transition: q.get("tr") as ProjectData["fx"]["transition"] } } : {}),
       style: {
         ...(q.get("tf") ? { titleFont: q.get("tf")! } : {}),
         ...(q.get("hc") ? { headingColor: `#${q.get("hc")}` } : {}),

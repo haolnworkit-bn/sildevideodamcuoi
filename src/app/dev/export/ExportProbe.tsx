@@ -45,6 +45,8 @@ export default function ExportProbe() {
       aspect: (q.get("aspect") as Aspect) || "16:9",
       // &scenes=1|2|3 : số cảnh chữ (1 = chỉ Tên & ngày)
       ...(q.get("scenes") ? { scenes: scenesForCount(base.scenes, Number(q.get("scenes")) as 1 | 2 | 3) } : {}),
+      // &tr=soft|curtain|... : kiểu chuyển cảnh
+      ...(q.get("tr") ? { fx: { ...base.fx, transition: q.get("tr") as typeof base.fx.transition } } : {}),
     };
     const photos = Array.from({ length: Number(q.get("photos") || 0) }, (_, i) => fakePhoto(i * 70));
     const t0 = performance.now();
