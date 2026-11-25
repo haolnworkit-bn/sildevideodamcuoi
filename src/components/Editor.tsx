@@ -420,6 +420,14 @@ export default function Editor() {
             {exp.kind === "options" && (
               <>
                 <h2>Xuất video {portrait ? "dọc 9:16" : "ngang 16:9"}</h2>
+                {portrait && (
+                  <p className="warn">
+                    Đây là video <strong>dọc</strong>. TV và máy chiếu đều là màn hình ngang, chiếu lên sẽ có viền đen hai bên.{" "}
+                    <button className="link" onClick={() => setAspect("16:9")}>
+                      Chuyển sang ngang 16:9
+                    </button>
+                  </p>
+                )}
                 <div className="length-grid" role="radiogroup" aria-label="Độ dài video">
                   {lengths.map((l) => (
                     <button key={l.sec} role="radio" aria-checked={target === l.sec} className={`length ${target === l.sec ? "on" : ""}`} onClick={() => setTarget(l.sec)}>
