@@ -1,167 +1,66 @@
-import { TAU, drawPhoto, drawSprite, makeLoopParticles, particleAt, particlesFor, sprite } from "../helpers";
-import type { Photo, RenderContext, VideoTemplate } from "../types";
+import { TAU, drawPhoto, makeLoopParticles, particleAt, particlesFor, radialGlow } from "../helpers";
+import type { VideoTemplate } from "../types";
 
-const TEAL = "#1f5f5b";
-const INK = "#24423f";
-const GOLD = "#b08a3e";
+/**
+ * Sen Ngọc — bản màu nước (2026-11-25): sen trắng, lá xanh xám trên giấy kem, khung mảnh.
+ * Mọi hình minh hoạ là ảnh ChatGPT khai báo trong template-assets.ts (nền ngang + 4 cụm trang trí).
+ * Code chỉ còn: màu, nền dự phòng/khổ dọc (giấy + khung hình học), hạt bụi sáng, khung ảnh, đường kẻ trang trí.
+ */
+const LEAF = "#4f6b45"; // xanh lá đậm — tiêu đề, tên
+const INK = "#545646"; // mực xám ô-liu — chữ thường
+const GOLD = "#a68a4a"; // vàng nhị sen — điểm nhấn
+const LINE = "rgba(96,122,82,0.55)";
 
-const motes = makeLoopParticles(24, 41, { minSize: 3, maxSize: 7, maxLoops: 1 });
+const motes = makeLoopParticles(22, 53, { minSize: 2, maxSize: 5, maxLoops: 1 });
 
-// ---------- Hoạ tiết: hoa sen, lá sen ----------
-
-export function lotus() {
-  return sprite("sen-lotus", 400, 320, (ctx) => {
-    ctx.translate(200, 280);
-    const petal = (rot: number, L: number, w: number, light: string, dark: string) => {
-      ctx.save();
-      ctx.rotate(rot);
-      const g = ctx.createLinearGradient(0, 0, 0, -L);
-      g.addColorStop(0, light);
-      g.addColorStop(1, dark);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(-w, -L * 0.45, 0, -L);
-      ctx.quadraticCurveTo(w, -L * 0.45, 0, 0);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.45)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
-    };
-    for (const r of [-1.45, 1.45]) petal(r, 150, 52, "#f9d9df", "#ea8ea4");
-    for (const r of [-1.05, -0.52, 0, 0.52, 1.05]) petal(r, 205, 60, "#fbe3e8", "#e57c96");
-    for (const r of [-0.75, -0.25, 0.25, 0.75]) petal(r, 175, 55, "#fde9ed", "#ec93a8");
-    for (const r of [-0.42, 0, 0.42]) petal(r, 135, 48, "#fff0f3", "#f0a2b4");
-  });
-}
-
-function lotusPad(key: string, rx: number) {
-  return sprite(`sen-pad-${key}`, rx * 2 + 20, rx * 0.7 + 20, (ctx) => {
-    const ry = rx * 0.32;
-    ctx.translate(rx + 10, ry + 10);
-    const g = ctx.createRadialGradient(0, 0, 10, 0, 0, rx);
-    g.addColorStop(0, "#7fb685");
-    g.addColorStop(1, "#3b7350");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    for (let a = 0.18; a <= TAU - 0.18; a += 0.05) ctx.lineTo(Math.cos(a) * rx, Math.sin(a) * ry);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = "rgba(220,240,210,0.3)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let i = 1; i < 12; i++) {
-      const a = 0.18 + (i * (TAU - 0.36)) / 12;
-      ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(a) * rx * 0.9, Math.sin(a) * ry * 0.9);
-    }
-    ctx.stroke();
-  });
-}
-
-function emblem(rc: RenderContext, cx: number, cy: number, r: number, _photo: Photo | null) {
-  drawSprite(rc.ctx, lotus(), cx, cy + r * 0.15, (r * 2.2) / 400);
+/** Khung 2 nét mảnh kiểu nền ngang (dùng cho khổ dọc / khi ảnh nền chưa tải) */
+function thinFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  const m = Math.min(W, H) * 0.035;
+  ctx.save();
+  ctx.strokeStyle = "rgba(96,122,82,0.75)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(m, m, W - 2 * m, H - 2 * m);
+  ctx.strokeStyle = "rgba(96,122,82,0.35)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(m + 8, m + 8, W - 2 * m - 16, H - 2 * m - 16);
+  ctx.restore();
 }
 
 export const senNgoc: VideoTemplate = {
   id: "sen-ngoc",
   name: "Sen Ngọc",
-  description: "Xanh ngọc thanh mát, hoa sen nở trên mặt nước gợn sóng",
+  description: "Sen trắng, lá xanh màu nước trên giấy kem, khung mảnh thanh lịch",
   tier: "free",
-  swatch: ["#d6ebe2", "#1f5f5b", "#ea8ea4"],
-  colors: ["xanh-la", "hong"],
-  theme: { heading: TEAL, names: TEAL, body: INK, accent: GOLD, line: "rgba(176,138,62,0.6)" },
+  swatch: ["#f4f0e4", LEAF, "#e9e2c9"],
+  colors: ["xanh-la", "trang"],
+  theme: { heading: LEAF, names: LEAF, body: INK, accent: GOLD, line: LINE },
   bodyFont: "serif",
-  intro: { title: "script", namesLine: "italic", photoMode: "faded", emblem },
+  capsFont: "display",
+  intro: { title: "script", namesLine: "italic", photoMode: "frame" },
 
+  /** Giấy kem + mảng màu nước xanh nhạt ở góc (gradient) + khung mảnh. Khổ ngang bị ảnh nền phủ kín. */
   background(rc) {
-    const { ctx, W, H, t, D } = rc;
-    const u = t / D;
-    const waterY = H * 0.74;
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#f3f8f4");
-    g.addColorStop(0.7, "#d6ebe2");
-    g.addColorStop(1, "#b9dccf");
+    const { ctx, W, H } = rc;
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, "#f6f3ea");
+    g.addColorStop(0.5, "#f3efe3");
+    g.addColorStop(1, "#eee9da");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
-
-    const wg = ctx.createLinearGradient(0, waterY - 40, 0, H);
-    wg.addColorStop(0, "rgba(120,180,165,0)");
-    wg.addColorStop(1, "rgba(80,150,135,0.35)");
-    ctx.fillStyle = wg;
-    ctx.fillRect(0, waterY - 40, W, H - waterY + 40);
-    ctx.strokeStyle = "rgba(255,255,255,0.45)";
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 7; i++) {
-      const y = waterY + i * 42;
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 24) {
-        const yy = y + Math.sin(x / 90 + TAU * u * (1 + (i % 2)) + i) * 4;
-        if (x === 0) ctx.moveTo(x, yy);
-        else ctx.lineTo(x, yy);
-      }
-      ctx.globalAlpha = 0.5 - i * 0.05;
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    // gợn sóng lan toả (số vòng nguyên / chu kỳ)
-    const sources: Array<[number, number, number, number]> = [
-      [0.17, 0.86, 2, 0],
-      [0.82, 0.89, 3, 0.4],
-      [0.5, 0.94, 2, 0.7],
-    ];
-    for (const [fx, fy, k, off] of sources) {
-      for (let j = 0; j < 2; j++) {
-        const f = (u * k + off + j * 0.5) % 1;
-        ctx.strokeStyle = `rgba(255,255,255,${(1 - f) * 0.5})`;
-        ctx.beginPath();
-        ctx.ellipse(fx * W, fy * H, 40 + f * 260, (40 + f * 260) * 0.22, 0, 0, TAU);
-        ctx.stroke();
-      }
-    }
-
-    const bob = (ph: number) => Math.sin(TAU * u + ph) * 6;
-    const by = H - 120;
-    drawSprite(ctx, lotusPad("a", 230), 260, by + bob(0), 1);
-    drawSprite(ctx, lotusPad("b", 160), 520, by + 70 + bob(1), 1);
-    drawSprite(ctx, lotusPad("a", 230), W - 200, by + 60 + bob(2), 0.9);
-    drawSprite(ctx, lotusPad("b", 160), W - 490, by + 90 + bob(3), 0.9);
-    drawSprite(ctx, lotus(), 250, by - 120 + bob(0), 0.8, Math.sin(TAU * u) * 0.03);
-    drawSprite(ctx, lotus(), W - 150, by - 15 + bob(2), 0.6, Math.sin(TAU * u + 2) * 0.03);
-    // nụ sen sát mép trái, không chạm vùng chữ
-    ctx.save();
-    ctx.translate(105, by + 30 + bob(1));
-    ctx.strokeStyle = "#4f8a5e";
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(18, -100, 0, -190);
-    ctx.stroke();
-    ctx.translate(0, -190);
-    ctx.rotate(Math.sin(TAU * u + 1) * 0.06);
-    const bg = ctx.createLinearGradient(0, 30, 0, -70);
-    bg.addColorStop(0, "#f8d3dc");
-    bg.addColorStop(1, "#e06f8c");
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.moveTo(0, 20);
-    ctx.quadraticCurveTo(-42, -20, 0, -80);
-    ctx.quadraticCurveTo(42, -20, 0, 20);
-    ctx.fill();
-    ctx.restore();
+    radialGlow(ctx, W * 0.92, H * 0.08, Math.max(W, H) * 0.35, "rgba(170,190,150,0.28)");
+    radialGlow(ctx, W * 0.08, H * 0.9, Math.max(W, H) * 0.35, "rgba(170,190,150,0.3)");
+    if (rc.portrait) thinFrame(ctx, W, H);
   },
 
+  /** Bụi sáng li ti bay lên chậm (vàng nhị sen) */
   foreground(rc) {
     const { ctx, W, H, t, D } = rc;
     const u = t / D;
-    ctx.fillStyle = "#e8cf86";
+    ctx.fillStyle = "#d9c27e";
     for (const p of particlesFor(rc, motes)) {
-      const q = particleAt(p, u, W, H * 0.85, 20, -1);
+      const q = particleAt(p, u, W, H, 20, -1);
       ctx.save();
-      ctx.globalAlpha *= 0.35 + 0.35 * q.flip;
+      ctx.globalAlpha *= 0.25 + 0.35 * Math.abs(q.flip);
       ctx.beginPath();
       ctx.arc(q.x, q.y, p.size, 0, TAU);
       ctx.fill();
@@ -169,34 +68,50 @@ export const senNgoc: VideoTemplate = {
     }
   },
 
+  /** Đường kẻ mảnh hai bên + 3 chấm nhị sen */
   ornament(rc, cx, cy) {
-    drawSprite(rc.ctx, lotus(), cx, cy - 10, 0.32);
+    const { ctx } = rc;
+    ctx.save();
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1.5;
+    for (const d of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + d * 30, cy);
+      ctx.lineTo(cx + d * 140, cy);
+      ctx.stroke();
+    }
+    ctx.fillStyle = GOLD;
+    for (const [dx, r] of [
+      [-16, 3],
+      [0, 5],
+      [16, 3],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(cx + dx, cy, r, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
   },
 
+  /** Khung passe-partout giấy trắng ngà + viền lá mảnh */
   photoFrame(ctx, photo, x, y, w, h, rc) {
-    const cx = x + w / 2;
-    const cy = y + h / 2 - 20;
-    const rx = w / 2 - 20;
-    const ry = h / 2 - 50;
     ctx.save();
-    ctx.shadowColor = "rgba(30,80,70,0.25)";
-    ctx.shadowBlur = 40;
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx + 12, ry + 12, 0, 0, TAU);
-    ctx.fill();
+    ctx.shadowColor = "rgba(60,72,50,0.28)";
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 10;
+    ctx.fillStyle = "#fbf9f2";
+    ctx.fillRect(x - 24, y - 24, w + 48, h + 48);
     ctx.restore();
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+    ctx.rect(x, y, w, h);
     ctx.clip();
-    drawPhoto(ctx, photo, cx - rx, cy - ry, rx * 2, ry * 2, rc);
+    drawPhoto(ctx, photo, x, y, w, h, rc);
     ctx.restore();
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx + 26, ry + 26, 0, 0, TAU);
-    ctx.stroke();
-    drawSprite(ctx, lotus(), cx, cy + ry - 10, 0.6);
+    ctx.save();
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x - 11, y - 11, w + 22, h + 22);
+    ctx.restore();
   },
 };
