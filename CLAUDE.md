@@ -12,7 +12,7 @@ Người dùng nói tiếng Việt → trả lời tiếng Việt. Ưu tiên hi�
 ## Công nghệ
 - Next.js 15 (App Router) + React 19 + TypeScript strict. Không Tailwind: CSS thuần trong `src/app/globals.css` (biến `--accent`, có dark mode).
 - Vẽ bằng **Canvas 2D**, không dùng thư viện animation. Xuất video bằng **WebCodecs** (`VideoEncoder` H.264 `avc1.640028`, `AudioEncoder` AAC `mp4a.40.2` 48 kHz) + **mp4-muxer@5**. Fallback: `MediaRecorder` WebM (thời gian thực).
-- Font: `next/font/google`, 4 font mặc định preload; các font khác `preload:false`, tải bằng `ensureFontsLoaded(keys)` vì canvas không tự tải web font.
+- Font: TỰ LƯU trong `src/fonts/` qua `next/font/local` (KHÔNG dùng next/font/google: từ 2026-11 Google trả file `/l/font?kit=` không đuôi, ngẫu nhiên → build lỗi "reading '1'" cả local lẫn Vercel). Tạo lại/thêm font: `scripts/fetch-fonts.py` (google/fonts GitHub, OFL, cắt Latin+Việt, woff2). 4 font mặc định preload; các font khác `preload:false`, tải bằng `ensureFontsLoaded(keys)` vì canvas không tự tải web font.
 - Lưu trữ phía trình duyệt: bản nháp JSON trong `localStorage` (`tsv:draft`); ảnh & nhạc là Blob trong **IndexedDB** (`tsv-media`/`blobs`, key ảnh = uuid, nhạc = `music:<projectId>`).
 - Chưa có backend/DB. `/api/checkout` là stub (provider `mock`). Windows + PowerShell, Node 24.
 
