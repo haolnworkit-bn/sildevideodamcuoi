@@ -7,7 +7,6 @@
  *   (đo bằng measureText, đã quy về toạ độ sân khấu) để kiểm tra tự động: tràn vùng an toàn, chữ quá nhỏ,
  *   chữ đè chữ, chữ đè khung ảnh. Không bật probe thì drawText chỉ là fillText.
  */
-import { revealText } from "./motion";
 import type { RenderContext } from "./types";
 
 export type Box = { x0: number; y0: number; x1: number; y1: number };
@@ -91,7 +90,7 @@ function boxOf(rc: RenderContext, x0: number, y0: number, x1: number, y1: number
 /** fillText + (khi bật probe) ghi khung bao chữ */
 export function drawText(rc: RenderContext, role: TextRole, text: string, x: number, y: number) {
   const { ctx } = rc;
-  if (!revealText(rc, text, x, y)) ctx.fillText(text, x, y);
+  ctx.fillText(text, x, y);
   const probe = rc.probe;
   if (!probe || !text.trim()) return;
   const m = ctx.measureText(text);

@@ -14,7 +14,10 @@
  */
 
 export interface Motion {
-  /** Số lần lặp mỗi vòng video (nguyên). Mặc định 2 */
+  /** Nhịp chuyển động tính bằng GIÂY (vd 5 = mỗi 5s một nhịp). Engine làm tròn để số nhịp/vòng là số nguyên → lặp liền mạch.
+   *  Ưu tiên hơn `cycles`. Không đặt cả hai → mặc định nhịp 5s. */
+  period?: number;
+  /** Số lần lặp mỗi vòng video (nguyên). Cách cũ — nên dùng `period` */
   cycles?: number;
   /** Đung đưa quanh điểm neo, đơn vị radian (~0.02 = nhẹ) */
   sway?: number;
@@ -26,6 +29,8 @@ export interface Motion {
   breathe?: number;
   /** Lệch pha để các lớp không chuyển động giống hệt nhau */
   phase?: number;
+  /** "Gió" khi đổi slide: lớp có sway/breathe rung mạnh lên rồi lặng dần. Hệ số nhân biên độ (mặc định 1.6; 0 = tắt) */
+  gust?: number;
 }
 
 /** Điểm neo của ảnh: ghép 1 chữ dọc (t/c/b) + 1 chữ ngang (l/c/r); "c" = chính giữa */
@@ -124,27 +129,27 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
       {
         src: "/assets/sen-ngoc/decorations/canh-tren.webp",
         anchor: "tr", x: 0.97, y: 0.05, height: 0.1, only: "portrait",
-        motion: { sway: 0.02, cycles: 2, phase: 1.7 },
+        motion: { sway: 0.04, period: 4.5, phase: 1.7 },
       },
       // cành lá dưới — mọc lên từ đáy, giữa-trái
       {
         src: "/assets/sen-ngoc/decorations/canh-duoi.webp",
         anchor: "bl", x: 0.2, y: 1.02, height: 0.25,
-        motion: { sway: 0.015, cycles: 2, phase: 0.6 },
+        motion: { sway: 0.03, period: 5, phase: 0.6 },
         portrait: { hide: true },
       },
       // sen trắng góc trên trái
       {
         src: "/assets/sen-ngoc/decorations/goc-tren-trai.webp",
         anchor: "tl", x: -0.005, y: -0.01, height: 0.4,
-        motion: { sway: 0.006, breathe: 0.004, cycles: 2 },
+        motion: { sway: 0.01, breathe: 0.01, period: 6 },
         portrait: { x: 0, y: 0, height: 0.2 },
       },
       // cụm sen đôi góc dưới phải
       {
         src: "/assets/sen-ngoc/decorations/goc-duoi-phai.webp",
         anchor: "br", x: 1.04, y: 1.06, height: 0.41,
-        motion: { breathe: 0.006, cycles: 2, phase: 2.4 },
+        motion: { sway: 0.008, breathe: 0.014, period: 5, phase: 2.4 },
         portrait: { x: 1, y: 1, height: 0.24 },
       },
     ],
@@ -165,44 +170,44 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
       {
         src: "/assets/hong-phuong/decorations/goc-tren-trai.webp",
         anchor: "tl", x: 0, y: 0, height: 280 / 1080,
-        motion: { sway: 0.008, cycles: 2 },
+        motion: { sway: 0.016, period: 5 },
         portrait: { height: 182 / 1920 },
       },
       // HP-06 cành đào trên phải — 320×180 ngang, 204×115 dọc; lệch pha với HP-03
       {
         src: "/assets/hong-phuong/decorations/canh-tren-phai.webp",
         anchor: "tr", x: 1, y: 0, height: 180 / 1080,
-        motion: { sway: 0.008, cycles: 2, phase: 2.2 },
+        motion: { sway: 0.016, period: 5.5, phase: 2.2 },
         portrait: { height: 115 / 1920 },
       },
       // HP-04 mẫu đơn + nón lá dưới trái (ngang) — 410×280
       {
         src: "/assets/hong-phuong/decorations/goc-duoi-trai.webp",
         anchor: "bl", x: 0, y: 1, height: 280 / 1080, only: "landscape",
-        motion: { breathe: 0.005, cycles: 2 },
+        motion: { breathe: 0.012, period: 6 },
       },
       // HP-05 mẫu đơn + đào dưới phải (ngang) — 410×290
       {
         src: "/assets/hong-phuong/decorations/goc-duoi-phai.webp",
         anchor: "br", x: 1, y: 1, height: 290 / 1080, only: "landscape",
-        motion: { breathe: 0.005, cycles: 2, phase: 3.1 },
+        motion: { breathe: 0.012, period: 6, phase: 3.1 },
       },
       // HP-04-P / HP-05-P cụm đáy khổ dọc — ~482×380 / ~477×390 (phóng to so với B1.1 để lấp dải đáy; phần cao nằm sát mép ngoài)
       {
         src: "/assets/hong-phuong/decorations/goc-duoi-trai-portrait.webp",
         anchor: "bl", x: 0, y: 1, height: 380 / 1920, only: "portrait",
-        motion: { breathe: 0.004, cycles: 2 },
+        motion: { breathe: 0.01, period: 6 },
       },
       {
         src: "/assets/hong-phuong/decorations/goc-duoi-phai-portrait.webp",
         anchor: "br", x: 1, y: 1, height: 390 / 1920, only: "portrait",
-        motion: { breathe: 0.004, cycles: 2, phase: 3.1 },
+        motion: { breathe: 0.01, period: 6, phase: 3.1 },
       },
       // HP-07 đèn lồng — chỉ khổ dọc, treo tại x=970, cao 230
       {
         src: "/assets/hong-phuong/decorations/den-long.webp",
         anchor: "tc", x: 970 / 1080, y: 0, height: 230 / 1920, only: "portrait",
-        motion: { sway: 0.012, cycles: 2, phase: 1.3 },
+        motion: { sway: 0.05, period: 4, phase: 1.3 },
       },
     ],
     front: [
@@ -210,7 +215,7 @@ export const TEMPLATE_ASSETS: Record<string, TemplateAssets> = {
       {
         src: "/assets/hong-phuong/decorations/dai-lua-day.webp",
         anchor: "bc", x: 0.5, y: 1, width: 980 / 1920,
-        motion: { driftX: 0.003, cycles: 1 },
+        motion: { driftX: 0.004, period: 7, gust: 0 },
         portrait: { width: 940 / 1080 },
       },
     ],

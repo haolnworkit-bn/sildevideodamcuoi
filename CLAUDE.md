@@ -114,6 +114,17 @@ Dùng thư mục profile Chrome trong scratchpad; xem ảnh chụp bằng tool R
   `drawCurtain` trong helpers.ts vẽ cảnh vào canvas phụ (rc.ctx tạm đổi) + mặt nạ gradient: cảnh cũ tách đôi ở giữa, 2 nửa trượt ra & mờ,
   cảnh mới lộ trong khe (mép mềm, thu 1.025→1), vệt sáng màu accent ở mép khe. Giao nhau ≥1.6s. Bỏ qua khi probe/1 cảnh.
   /dev/frames & /dev/export nhận `&tr=`. MP4 sen-ngoc 2 vòng có nhạc 55.6s (7.7× thực); hong-phuong 9:16 40.0s.
+  Cùng PR — CHUYỂN ĐỘNG TRONG SLIDE (chủ dự án yêu cầu: "cây sen đung đưa, chữ chạy vào"):
+  `Motion.period` (giây; engine làm tròn ra số nhịp nguyên/vòng) thay `cycles` — trước đây cycles 2/vòng ~10–15s một nhịp nên gần như đứng yên;
+  `gustAt()` trong layers.ts: "cơn gió" sin tắt dần ~4s sau mỗi mốc đổi cảnh (lớp có sway/breathe, hệ số `motion.gust`, mặc định 1.6; 1 cảnh = tắt).
+  Biên độ Sen Ngọc / Hồng Phượng đã tăng (đèn lồng 0.05 rad nhịp 4s). Chữ: `drawReveal` nhận `dx` (lướt ngang, easeOutQuart);
+  tiêu đề intro từ trái, dòng tên từ phải, khung ảnh từ phía của nó, lời cảm ơn xen kẽ trái/phải; cảnh Tên: `drawNames(spread)` hai tên chạy từ hai bên vào.
+  SỬA GIẬT (chủ dự án báo "chữ giật"): đo bằng `/dev/perf?template=&tr=&photos=` (ms/khung cả vòng, preview 1280px). Thủ phạm = `ctx.filter`
+  (blur của "Mờ ảo": tới ~500ms/khung; brightness của vệt sáng) → ĐÃ BỎ, CẤM dùng ctx.filter trong renderFrame. Wipe 6→3 dải. Sau sửa: fade avg 11ms (= trước motion v2),
+  soft ~13ms, curtain ~13ms (headless không GPU). Chữ canvas định vị tới 1/4px (không nhảy nấc) → giật là do hiệu năng.
+  ĐÃ HOÀN TÁC HIỆU ỨNG CHỮ (chủ dự án: "vẫn còn giật, để lại như cũ"): motion.ts chỉ còn mờ dần + nhô lên (drawReveal), drawText = fillText;
+  BỎ: wipe/chars/words, vệt sáng (rc.shine), chữ chạy vào (dx), hai tên chạy vào, camera tiến chậm; mặc định chuyển cảnh lại "fade".
+  GIỮ: lựa chọn "Mờ ảo"(không blur)/"Vén màn", hoạ tiết đung đưa theo period + gió đổi cảnh, /dev/perf. Đừng thử lại hiệu ứng chữ khi chưa có video/GIF chủ dự án xác nhận.
   LƯU Ý GIT: PR #14–16 merge chồng vào nhánh trung gian, KHÔNG vào main → PR này mang cả #14–16 vào main. PR chồng: đổi base về main trước khi merge.
 - 2026-11-25 (chuyển động v2 + Sen Ngọc mới — chủ dự án đánh giá chuyển động RẤT CAO): nhánh `design/sen-ngoc-v2` (trên feat/tv-presenter) và `feat/motion-v2` (trên sen-ngoc-v2), PR.
   Sen Ngọc: bộ ảnh ChatGPT `_inbox/tong-hoa-xanh` → nền ngang + 4 cụm `decorations/` (back, sway/breathe); khổ dọc nền code giấy + khung 2 nét (chờ phiếu SN-02). Đã bỏ hoa sen code.

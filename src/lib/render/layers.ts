@@ -64,6 +64,26 @@ function resolveLayer(l: ImageLayer, portrait: boolean): ImageLayer | null {
   return l;
 }
 
+/**
+ * "Cơn gió" khi đổi slide: 0 lúc bình thường; ngay sau mốc bắt đầu mỗi cảnh (trừ cảnh đầu vòng) dao động
+ * sin tắt dần trong ~4s. Tất định theo t → preview/MP4 giống nhau. 1 cảnh → không có gió (vòng lặp tĩnh).
+ */
+function gustAt(rc: RenderContext, phase: number): number {
+  const scenes = rc.timeline.scenes;
+  if (scenes.length < 2) return 0;
+  const lag = 0.15 + 0.05 * Math.abs(Math.sin(phase * 3.7)); // lớp khác nhau nhận gió lệch nhau chút
+  let best = Infinity;
+  for (const s of scenes) {
+    // mốc đổi cảnh ≈ s.start (giữa lúc giao nhau); tính cả vòng trước để mượt qua điểm nối
+    for (const off of [0, -rc.D]) {
+      const tau = rc.t - (s.start + off) - lag;
+      if (tau >= 0 && tau < best) best = tau;
+    }
+  }
+  if (best > 4.5) return 0;
+  return Math.exp(-best / 1.1) * Math.sin((TAU * best) / 1.7) * Math.min(1, best / 0.25);
+}
+
 export function drawAssetLayers(rc: RenderContext, id: string, slot: "back" | "front"): void {
   const layers = TEMPLATE_ASSETS[id]?.[slot];
   if (!layers?.length) return;
@@ -84,11 +104,14 @@ export function drawAssetLayers(rc: RenderContext, id: string, slot: "back" | "f
       w = (h * img.width) / img.height;
     }
     const m = l.motion ?? {};
-    const f = TAU * Math.max(1, Math.round(m.cycles ?? 2)) * u + (m.phase ?? 0);
-    const sway = (m.sway ?? 0) * Math.sin(f);
+    const n = m.period ? rc.D / m.period : m.cycles ?? rc.D / 5;
+    const f = TAU * Math.max(1, Math.round(n)) * u + (m.phase ?? 0);
+    // gió khi đổi slide: dao động tắt dần, lệch pha nhẹ theo từng lớp
+    const g = gustAt(rc, m.phase ?? 0) * (m.gust ?? 1.6);
+    const sway = (m.sway ?? 0) * (Math.sin(f) + 0.25 * Math.sin(2 * f + 1.1) + g);
     const bobY = (m.bob ?? 0) * H * Math.sin(f + 1.3);
     const driftX = (m.driftX ?? 0) * W * Math.sin(f + 0.7);
-    const breathe = 1 + (m.breathe ?? 0) * Math.sin(f + 2.1);
+    const breathe = 1 + (m.breathe ?? 0) * (Math.sin(f + 2.1) + 0.6 * g);
     const [ax, ay] = ANCHOR[l.anchor];
     ctx.save();
     ctx.translate(l.x * W + driftX, l.y * H + bobY);

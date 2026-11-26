@@ -1,5 +1,4 @@
 import type { FxSettings } from "../project";
-import { shinePhase } from "./motion";
 import type { Photo, PhotoSource, RenderContext, TimelineScene } from "./types";
 
 export const TAU = Math.PI * 2;
@@ -93,27 +92,14 @@ export function runScenes(
     const lt = single ? SETTLED : sceneLocalTime(t, D, s, f);
     const dur = s.end - s.start;
     const entering = lt < dur / 2;
-    // "Hơi thở" của cảnh: máy quay tiến rất chậm suốt cảnh (không áp khi kiểm tra bố cục / 1 cảnh đứng yên)
-    const push = single || rc.probe ? 1 : 1 + 0.018 * clamp((lt + f / 2) / (dur + f));
     if (fx.transition === "curtain" && v < 0.999 && !rc.probe) {
-      drawCurtain(rc, entering ? v : 1 - v, entering, push, () => {
-        rc.shine = shinePhase(lt, single, t, D);
-        draw(lt, s);
-        rc.shine = undefined;
-      });
+      drawCurtain(rc, entering ? v : 1 - v, entering, () => draw(lt, s));
       continue;
     }
     ctx.save();
     ctx.globalAlpha *= v;
     applyTransition(ctx, fx.transition, v, entering, W, H);
-    if (push !== 1) {
-      ctx.translate(W / 2, H / 2);
-      ctx.scale(push, push);
-      ctx.translate(-W / 2, -H / 2);
-    }
-    rc.shine = shinePhase(lt, single, t, D);
     draw(lt, s);
-    rc.shine = undefined;
     ctx.restore();
   }
 }
@@ -126,7 +112,7 @@ const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2
  * Cảnh được vẽ vào canvas phụ cùng độ phân giải rồi che bằng mặt nạ gradient → mép mềm, không nhân đôi chi phí vẽ cảnh.
  * `p` = tiến độ mở màn 0..1 (giống nhau cho cảnh vào và cảnh ra tại cùng thời điểm → hai mặt nạ bù nhau, không bóng ma).
  */
-function drawCurtain(rc: RenderContext, p: number, entering: boolean, push: number, drawScene: () => void) {
+function drawCurtain(rc: RenderContext, p: number, entering: boolean, drawScene: () => void) {
   const main = rc.ctx;
   const { W, H } = rc;
   const cw = main.canvas.width;
@@ -143,7 +129,7 @@ function drawCurtain(rc: RenderContext, p: number, entering: boolean, push: numb
   const c = sc.getContext("2d")!;
   c.setTransform(base);
   {
-    const k = push * (entering ? 1.025 - 0.025 * e : 1);
+    const k = entering ? 1.025 - 0.025 * e : 1;
     c.translate(W / 2, H / 2);
     c.scale(k, k);
     c.translate(-W / 2, -H / 2);
@@ -237,9 +223,9 @@ function applyTransition(
   } else if (kind === "slide") {
     ctx.translate(0, (entering ? 1 : -1) * (1 - v) * 70);
   } else if (kind === "soft") {
-    // Mờ ảo: cảnh mới hiện từ nhoè sang nét và thu nhẹ vào; cảnh cũ nhoè đi, trôi lên
+    // Mờ ảo: cảnh mới thu nhẹ vào chỗ, cảnh cũ trôi lên và lùi xa.
+    // KHÔNG dùng ctx.filter blur — vẽ cả cảnh qua bộ lọc mất hàng trăm ms/khung → preview giật.
     const q = 1 - v;
-    if (q > 0.01) ctx.filter = `blur(${(q * 10).toFixed(2)}px)`;
     const s = entering ? 1 + 0.035 * q : 1 - 0.012 * q;
     ctx.translate(W / 2, H / 2 + (entering ? 0 : -28 * q));
     ctx.scale(s, s);

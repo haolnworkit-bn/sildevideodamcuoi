@@ -110,7 +110,7 @@ export function createDefaultProject(templateId: string, eventType: EventTypeId)
     photoSide: "left",
     scenes: { intro: true, message: true, album: true },
     style: {},
-    fx: { particles: 1, transition: "soft" },
+    fx: { particles: 1, transition: "fade" },
     music: { enabled: false, volume: 0.8, name: "" },
   };
 }
