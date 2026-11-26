@@ -1,74 +1,148 @@
-import {
-  Alex_Brush,
-  Allura,
-  Be_Vietnam_Pro,
-  Charm,
-  Corinthia,
-  Cormorant_Garamond,
-  Dancing_Script,
-  EB_Garamond,
-  Great_Vibes,
-  Imperial_Script,
-  Lora,
-  Montserrat,
-  Noto_Serif,
-  Pinyon_Script,
-  Playfair_Display,
-  Prata,
-  Quicksand,
-} from "next/font/google";
+import localFont from "next/font/local";
 import type { FontLibrary } from "./render/types";
 import { ensureAssetsLoaded } from "./render/assets";
 
+/*
+ * TẤT CẢ font được TỰ LƯU trong src/fonts/ (next/font/local), KHÔNG dùng next/font/google nữa:
+ * từ 2026-11 Google Fonts trả file font ngẫu nhiên dạng "/l/font?kit=…" (không đuôi) → next/font/google lỗi build
+ * ("Cannot read properties of null (reading '1')") cả máy local lẫn Vercel.
+ * File lấy từ github.com/google/fonts (OFL, kèm OFL.txt), cắt Latin + tiếng Việt, woff2 — tạo lại bằng scripts/fetch-fonts.py.
+ */
+
 // Font mặc định (tải sẵn)
-const greatVibes = Great_Vibes({ weight: "400", subsets: ["latin", "vietnamese"], variable: "--font-script" });
-const playfair = Playfair_Display({
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "vietnamese"],
+const greatVibes = localFont({
+  src: [
+    { path: "../fonts/greatvibes/GreatVibes-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  variable: "--font-script",
+  display: "swap",
+});
+const playfair = localFont({
+  src: [
+    { path: "../fonts/playfairdisplay/PlayfairDisplay-wght.woff2", weight: "400 700", style: "normal" },
+    { path: "../fonts/playfairdisplay/PlayfairDisplay-Italic-wght.woff2", weight: "400 700", style: "italic" },
+  ],
   variable: "--font-display",
+  display: "swap",
 });
-const beVietnam = Be_Vietnam_Pro({
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["latin", "vietnamese"],
+const beVietnam = localFont({
+  src: [
+    { path: "../fonts/bevietnampro/BeVietnamPro-Light.woff2", weight: "300", style: "normal" },
+    { path: "../fonts/bevietnampro/BeVietnamPro-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/bevietnampro/BeVietnamPro-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/bevietnampro/BeVietnamPro-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/bevietnampro/BeVietnamPro-Bold.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-sans",
+  display: "swap",
 });
-const cormorant = Cormorant_Garamond({
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "vietnamese"],
+const cormorant = localFont({
+  src: [
+    { path: "../fonts/cormorantgaramond/CormorantGaramond-wght.woff2", weight: "300 700", style: "normal" },
+    { path: "../fonts/cormorantgaramond/CormorantGaramond-Italic-wght.woff2", weight: "300 700", style: "italic" },
+  ],
   variable: "--font-serif",
+  display: "swap",
 });
 
 // Font tuỳ chọn (chỉ tải khi người dùng chọn)
-const dancing = Dancing_Script({ weight: ["400", "600"], subsets: ["latin", "vietnamese"], preload: false });
-const alexBrush = Alex_Brush({ weight: "400", subsets: ["latin", "vietnamese"], preload: false });
-const allura = Allura({ weight: "400", subsets: ["latin", "vietnamese"], preload: false });
-const pinyon = Pinyon_Script({ weight: "400", subsets: ["latin", "vietnamese"], preload: false });
-const imperial = Imperial_Script({ weight: "400", subsets: ["latin", "vietnamese"], preload: false });
-const corinthia = Corinthia({ weight: ["400", "700"], subsets: ["latin", "vietnamese"], preload: false });
-const charm = Charm({ weight: ["400", "700"], subsets: ["latin", "vietnamese"], preload: false });
-const lora = Lora({ weight: ["400", "500", "600"], style: ["normal", "italic"], subsets: ["latin", "vietnamese"], preload: false });
-const notoSerif = Noto_Serif({
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "vietnamese"],
+const dancing = localFont({
+  src: [
+    { path: "../fonts/dancingscript/DancingScript-wght.woff2", weight: "400 700", style: "normal" },
+  ],
+  display: "swap",
   preload: false,
 });
-const ebGaramond = EB_Garamond({
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "vietnamese"],
+const alexBrush = localFont({
+  src: [
+    { path: "../fonts/alexbrush/AlexBrush-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  display: "swap",
   preload: false,
 });
-const prata = Prata({ weight: "400", subsets: ["latin", "vietnamese"], preload: false });
-const montserrat = Montserrat({
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "vietnamese"],
+const allura = localFont({
+  src: [
+    { path: "../fonts/allura/Allura-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  display: "swap",
   preload: false,
 });
-const quicksand = Quicksand({ weight: ["400", "500", "600"], subsets: ["latin", "vietnamese"], preload: false });
+const pinyon = localFont({
+  src: [
+    { path: "../fonts/pinyonscript/PinyonScript-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const imperial = localFont({
+  src: [
+    { path: "../fonts/imperialscript/ImperialScript-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const corinthia = localFont({
+  src: [
+    { path: "../fonts/corinthia/Corinthia-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/corinthia/Corinthia-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const charm = localFont({
+  src: [
+    { path: "../fonts/charm/Charm-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/charm/Charm-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const lora = localFont({
+  src: [
+    { path: "../fonts/lora/Lora-wght.woff2", weight: "400 700", style: "normal" },
+    { path: "../fonts/lora/Lora-Italic-wght.woff2", weight: "400 700", style: "italic" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const notoSerif = localFont({
+  src: [
+    { path: "../fonts/notoserif/NotoSerif-wdth-wght.woff2", weight: "400 700", style: "normal" },
+    { path: "../fonts/notoserif/NotoSerif-Italic-wdth-wght.woff2", weight: "400 700", style: "italic" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const ebGaramond = localFont({
+  src: [
+    { path: "../fonts/ebgaramond/EBGaramond-wght.woff2", weight: "400 800", style: "normal" },
+    { path: "../fonts/ebgaramond/EBGaramond-Italic-wght.woff2", weight: "400 800", style: "italic" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const prata = localFont({
+  src: [
+    { path: "../fonts/prata/Prata-Regular.woff2", weight: "400", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const montserrat = localFont({
+  src: [
+    { path: "../fonts/montserrat/Montserrat-wght.woff2", weight: "300 700", style: "normal" },
+    { path: "../fonts/montserrat/Montserrat-Italic-wght.woff2", weight: "300 700", style: "italic" },
+  ],
+  display: "swap",
+  preload: false,
+});
+const quicksand = localFont({
+  src: [
+    { path: "../fonts/quicksand/Quicksand-wght.woff2", weight: "300 700", style: "normal" },
+  ],
+  display: "swap",
+  preload: false,
+});
 
 export const fontVariables = [greatVibes, playfair, beVietnam, cormorant].map((f) => f.variable).join(" ");
 
